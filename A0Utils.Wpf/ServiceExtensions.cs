@@ -23,6 +23,7 @@ namespace A0Utils.Wpf
 
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<SettingsViewModel>();
+            services.AddSingleton<LicenseViewModel>();
 
             services.AddSingleton<DialogService>();  
             services.AddSingleton<FileOperationsService>();
