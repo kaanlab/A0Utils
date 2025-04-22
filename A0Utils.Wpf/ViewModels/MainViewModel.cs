@@ -20,6 +20,7 @@ namespace A0Utils.Wpf.ViewModels
         private readonly YandexService _yandexService;
         private readonly DialogService _dialogService;
         private readonly SettingsService _settingsService;
+        private readonly string _a0InstallationPath;
 
         private static readonly string[] _assemblyInfo = AssemblyHelpers.GetAssemblyInfo();
 
@@ -36,9 +37,11 @@ namespace A0Utils.Wpf.ViewModels
             _dialogService = dialogService;
             _settingsService = settingsService;
 
-            _yandexService.ProgressChanged += (s, progress) => DownloadProgress = progress;
-
+            _a0InstallationPath = _settingsService.GetSettings().A0InstallationPath;
+            FindAllLicenses();
             DownloadPath = _settingsService.GetSettings().DownloadUpdatesPath;
+
+            _yandexService.DownloadUpdatesProgressChanged += (s, progress) => DownloadProgress = progress;
         }
 
 
@@ -46,6 +49,7 @@ namespace A0Utils.Wpf.ViewModels
         public static string AssemblyCopyright { get { return _assemblyInfo[1]; } }
         public static string AssemblyCompany { get { return _assemblyInfo[2]; } }
 
+        public string SelectedLicense { get; set; }
 
         private string _downloadPath;
         public string DownloadPath
@@ -65,18 +69,11 @@ namespace A0Utils.Wpf.ViewModels
             }
         }
 
-        private string _licenseName;
-        public string LicenseName
+        private string _infoMessage;
+        public string InfoMessage
         {
-            get => _licenseName;
-            set => SetProperty(ref _licenseName, value);
-        }
-
-        private string _message;
-        public string Message
-        {
-            get => _message;
-            set => SetProperty(ref _message, value);
+            get => _infoMessage;
+            set => SetProperty(ref _infoMessage, value);
         }
 
         private string _a0LicenseExp;
@@ -100,6 +97,17 @@ namespace A0Utils.Wpf.ViewModels
             set => SetProperty(ref _subscriptionLicenseExp, value);
         }
 
+        private ObservableCollection<string> _licenses;
+        public ObservableCollection<string> Licenses
+        {
+            get => _licenses;
+            set
+            {
+                _licenses = value;
+                OnPropertyChanged(nameof(Licenses));
+            }
+        }
+
         private ObservableCollection<UpdateModel> _updateModels;
         public ObservableCollection<UpdateModel> UpdateModels
         {
@@ -111,78 +119,41 @@ namespace A0Utils.Wpf.ViewModels
             }
         }
 
-        private ICommand _checkLicenseCommand;
-        public ICommand CheckLicenseCommand
+        
+        private ICommand _getLicenseInfoCommand;
+        public ICommand GetLicenseInfoCommand
         {
             get
             {
-                return _checkLicenseCommand ??= new RelayCommand(CheckLicense);
+                return _getLicenseInfoCommand ??= new AsyncRelayCommand(GetLicenseInfo);
             }
         }
 
-        private void CheckLicense()
+        private async Task GetLicenseInfo()
         {
             try
             {
-                string path = _settingsService.GetSettings().A0InstallationPath;
-
-                if (_fileOperationsService.IsFolderExist(path))
+                if (string.IsNullOrEmpty(SelectedLicense))
                 {
-                    var foundLicense = _fileOperationsService.FindLicFile(path);
-                    if (string.IsNullOrEmpty(foundLicense))
-                    {
-                        Message = "Лицензионный файл не найден. Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)";
-                        LicenseName = string.Empty;
-                    }
-                    else
-                    {
-                        LicenseName = foundLicense;
-                        Message = "Теперь можно обновить лицензию и получить список доступных обновлений";
-                    }
-                }
-                else
-                {
-                    _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", path);
-                    Message = $"Программа A0 не установлена или отсутствует доступ к папке {path}";
-                    LicenseName = string.Empty;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка");
-                Message = $"Ошибка: {ex.Message}";
-                LicenseName = string.Empty;
-            }
-        }
-
-        private ICommand _getLicenseCommand;
-        public ICommand GetLicenseCommand
-        {
-            get
-            {
-                return _getLicenseCommand ??= new AsyncRelayCommand(GetLicense);
-            }
-        }
-
-        private async Task GetLicense()
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(LicenseName))
-                {
-                    Message = "Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)";
+                    InfoMessage = "Выберите лицензию из списка";
                     return;
                 }
 
-                var licenseResult = await _yandexService.GetLicenses(LicenseName);
+                var licenseResult = await _yandexService.GetLicensesInfo(SelectedLicense);
                 if (licenseResult.IsFailure)
                 {
-                    Message = licenseResult.Error;
+                    InfoMessage = licenseResult.Error;
                     return;
                 }
 
-                A0LicenseExp = $"Лицензия А0 действительна до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
-                PIRLicenseExp = $"Лицензия ПИР действительна до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
+                A0LicenseExp = licenseResult.Value.A0LicenseExpAt == default 
+                    ? "Лицензия А0 отсутствует"
+                    : $"Лицензия А0 действительна до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
+
+                PIRLicenseExp = licenseResult.Value.PIRLicenseExpAt == default 
+                    ? "Лицензия ПИР отсутствует"
+                    : $"Лицензия ПИР действительна до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
+
                 SubscriptionLicenseExp = licenseResult.Value.SubscriptionLicenseExpAt == default
                     ? "Подписка на базы отсутствует"
                     : $"Подписка на базы: {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}";
@@ -190,7 +161,7 @@ namespace A0Utils.Wpf.ViewModels
                 var updatesResult = await _yandexService.GetUpdates();
                 if (updatesResult.IsFailure)
                 {
-                    Message = updatesResult.Error;
+                    InfoMessage = updatesResult.Error;
                     return;
                 }
 
@@ -199,7 +170,7 @@ namespace A0Utils.Wpf.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка");
-                Message = $"Ошибка: {ex.Message}";
+                InfoMessage = $"Ошибка: {ex.Message}";
             }
         }
 
@@ -217,18 +188,18 @@ namespace A0Utils.Wpf.ViewModels
             var selectedUpdates = UpdateModels.Where(item => item.IsSelected).ToList();
             if (selectedUpdates.Count == 0)
             {
-                Message = "Выберите обновления для загрузки";
+                InfoMessage = "Выберите обновления для загрузки";
                 return;
             }
 
             var downloadResult = await _yandexService.DownloadUpdates(selectedUpdates, DownloadPath);
             if (downloadResult.IsFailure)
             {
-                Message = downloadResult.Error;
+                InfoMessage = downloadResult.Error;
                 return;
             }
 
-            Message = "Обновления загружены!";
+            InfoMessage = "Обновления загружены!";
         }
 
 
@@ -251,7 +222,7 @@ namespace A0Utils.Wpf.ViewModels
                 await _settingsService.UpdateDownloadPath(DownloadPath);
             }
 
-            Message = "Путь сохранения обновлений изменен!";
+            InfoMessage = "Путь сохранения обновлений изменен!";
         }
 
         private ICommand _openSettingsCommand;
@@ -260,6 +231,54 @@ namespace A0Utils.Wpf.ViewModels
             get
             {
                 return _openSettingsCommand ??= new RelayCommand(_dialogService.ShowSettingsDialog);
+            }
+        }
+
+        private ICommand _openLicenseCommand;
+        public ICommand OpenLicenseCommand
+        {
+            get
+            {
+                return _openLicenseCommand ??= new RelayCommand(_dialogService.ShowLicenseDialog);
+            }
+        }
+
+        private ICommand _refreshLicensesCommand;
+        public ICommand RefreshLicensesCommand
+        {
+            get
+            {
+                return _refreshLicensesCommand ??= new RelayCommand(FindAllLicenses);
+            }
+        }
+
+        private void FindAllLicenses()
+        {
+            try
+            {
+                if (_fileOperationsService.IsFolderExist(_a0InstallationPath))
+                {
+
+                    var foundLicense = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
+                    if (!foundLicense.Any())
+                    {
+                        InfoMessage = "Лицензионные файлы не найдены";
+                    }
+                    else
+                    {
+                        Licenses = new ObservableCollection<string>(foundLicense.Select(x => x.FileName).Distinct());
+                    }
+                }
+                else
+                {
+                    _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", _a0InstallationPath);
+                    InfoMessage = $"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка");
+                InfoMessage = $"Ошибка: {ex.Message}";
             }
         }
     }

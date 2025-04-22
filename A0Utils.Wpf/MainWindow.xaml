@@ -22,6 +22,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -32,15 +33,21 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" Text="Загрузка обновлений для программы А0" FontSize="16"/>
-        <Button Grid.Row="0" Grid.ColumnSpan="2" Content="Настройки" Command="{Binding OpenSettingsCommand}" HorizontalAlignment="Right" Margin="10" Padding="5"/>
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" Foreground="Navy" FontSize="16" />
-        <TextBox Grid.Row="2" Text="{Binding LicenseName, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Width="200" FontSize="16" Margin="0,5" />
-        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding A0LicenseExp, UpdateSourceTrigger=PropertyChanged}" />
-        <TextBlock Grid.Row="4"  Grid.ColumnSpan="2" Text="{Binding PIRLicenseExp, UpdateSourceTrigger=PropertyChanged}" />
-        <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="{Binding SubscriptionLicenseExp, UpdateSourceTrigger=PropertyChanged}" />
-        <Button Grid.Row="6" Content="Найти лицензию" Command="{Binding CheckLicenseCommand}" HorizontalAlignment="Left" Margin="10" Padding="5" />
-        <Button Grid.Row="6" Grid.Column="1" Content="Обновить лицензию" Command="{Binding GetLicenseCommand}" HorizontalAlignment="Right" Margin="10" Padding="5" />
-        <DataGrid Grid.Row="7" Grid.ColumnSpan="2" ItemsSource="{Binding Source={StaticResource GroupedUpdateModels}}"
+        <Button Grid.Row="0" Grid.ColumnSpan="2" Content="Настройки" Command="{Binding OpenSettingsCommand}" HorizontalAlignment="Right" Margin="0,10" Padding="5"/>
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding InfoMessage, UpdateSourceTrigger=PropertyChanged}" Foreground="Navy" FontSize="16" Margin="5,0"/>
+        <StackPanel Orientation="Vertical" Grid.Row="2" Margin="5">
+            <Label Content="Выберите лицензию из списка" />
+            <ComboBox ItemsSource="{Binding Licenses}" SelectedItem="{Binding SelectedLicense}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Right">
+            <Button Grid.Column="1" Content="Управление лицензиями" Command="{Binding OpenLicenseCommand}" Margin="5" Padding="5" />
+            <Button Grid.Column="1" Content="Обновить список" Command="{Binding RefreshLicensesCommand}" Margin="5" Padding="5" />
+        </StackPanel>
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="{Binding A0LicenseExp, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock Grid.Row="5"  Grid.ColumnSpan="2" Text="{Binding PIRLicenseExp, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Text="{Binding SubscriptionLicenseExp, UpdateSourceTrigger=PropertyChanged}" />
+        <Button Grid.Row="7" Grid.Column="1" Content="Получить информацию" Command="{Binding GetLicenseInfoCommand}" HorizontalAlignment="Right" Margin="0,10" Padding="5" />
+        <DataGrid Grid.Row="8" Grid.ColumnSpan="2" ItemsSource="{Binding Source={StaticResource GroupedUpdateModels}}"
               AutoGenerateColumns="False"
               CanUserAddRows="False"
               CanUserDeleteRows="False"
@@ -54,7 +61,6 @@
                     </GroupStyle.HeaderTemplate>
                 </GroupStyle>
             </DataGrid.GroupStyle>
-
             <DataGrid.Columns>
                 <DataGridTemplateColumn Width="20">
                     <DataGridTemplateColumn.CellTemplate>
@@ -68,11 +74,11 @@
                 <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="70"/>                
             </DataGrid.Columns>
         </DataGrid>
-        <ProgressBar Grid.Row="8" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="0,5"/>
-        <Button Grid.Row="9" Content="Обзор" Command="{Binding SaveToCommand}" HorizontalAlignment="Right" Margin="10" Padding="5" />
-        <TextBlock Grid.Row="9" Text="{Binding DownloadPath, UpdateSourceTrigger=PropertyChanged}" Width="200" HorizontalAlignment="Left" Margin="10"/>
-        <Button Grid.Row="9" Grid.Column="2" Content="Скачать" Command="{Binding DownloadSelectedCommand}" HorizontalAlignment="Right" Margin="10" Padding="5" />
-        <StatusBar VerticalAlignment="Bottom" Background="LightGray" Grid.Row="10" Grid.ColumnSpan="2" >
+        <ProgressBar Grid.Row="9" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="0,5"/>
+        <Button Grid.Row="10" Content="Обзор" Command="{Binding SaveToCommand}" HorizontalAlignment="Right" Margin="10" Padding="5" />
+        <TextBlock Grid.Row="10" Text="{Binding DownloadPath, UpdateSourceTrigger=PropertyChanged}" Width="200" HorizontalAlignment="Left" Margin="10" Padding="5"/>
+        <Button Grid.Row="10" Grid.Column="2" Content="Скачать" Command="{Binding DownloadSelectedCommand}" HorizontalAlignment="Right" Margin="0,10" Padding="5" />
+        <StatusBar VerticalAlignment="Bottom" Background="LightGray" Grid.Row="11" Grid.ColumnSpan="2" >
             <StatusBarItem>
                 <Label Content="{Binding AssemblyCopyright}" DockPanel.Dock="Top" />
             </StatusBarItem>

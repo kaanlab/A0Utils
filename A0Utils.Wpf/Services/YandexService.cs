@@ -25,7 +25,8 @@ namespace A0Utils.Wpf.Services
 
         private readonly SettingsModel _settings;
 
-        public event EventHandler<int> ProgressChanged;
+        public event EventHandler<int> DownloadUpdatesProgressChanged;
+        public event EventHandler<int> DownloadLicenseProgressChanged;
 
         public YandexService(
             IHttpClientFactory httpClientFactory, 
@@ -102,7 +103,7 @@ namespace A0Utils.Wpf.Services
 
                                         if (totalBytes > 0)
                                         {
-                                            ProgressChanged?.Invoke(this, (int)((totalRead * 100) / totalBytes));
+                                            DownloadUpdatesProgressChanged?.Invoke(this, (int)((totalRead * 100) / totalBytes));
                                         }
                                     }
                                 }
@@ -120,7 +121,28 @@ namespace A0Utils.Wpf.Services
             }
         }
 
-        public async Task<Result<LicensesExpModel>> GetLicenses(string licenseName)
+        public async Task<Result<string>> DownloadLicense(string licenseName)
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient("yandexClient");
+                var yandexResourceResult = await GetLicenseResource(httpClient, 1000);
+                if (yandexResourceResult.IsFailure)
+                {
+                    return Result.Failure<string>(yandexResourceResult.Error);
+                }
+
+                return await DownloadLicenseFile(licenseName, yandexResourceResult.Value, httpClient);
+
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError("Ошибка при получении лицензии: {Error}", ex);
+                return Result.Failure<string>("Ошибка при получении лицензии");
+            }
+        }
+
+        public async Task<Result<LicensesExpModel>> GetLicensesInfo(string licenseName)
         {
             try
             {
@@ -131,13 +153,7 @@ namespace A0Utils.Wpf.Services
                     return Result.Failure<LicensesExpModel>(yandexResourceResult.Error);
                 }
 
-                var licenseResult = await DownloadLicenseFile(licenseName, yandexResourceResult.Value, httpClient);
-                if (licenseResult.IsFailure)
-                {
-                    return Result.Failure<LicensesExpModel>(licenseResult.Error);
-                }
-
-                var descriptionResult = await DownloadLicenseDescriptionFile(licenseName, yandexResourceResult.Value, httpClient);
+                var descriptionResult = await DownloadAndParseLicenseDescriptionFile(licenseName, yandexResourceResult.Value, httpClient);
                 if (descriptionResult.IsFailure)
                 {
                     return Result.Failure<LicensesExpModel>(descriptionResult.Error);
@@ -181,21 +197,15 @@ namespace A0Utils.Wpf.Services
                     var path = Path.Combine(AppPath, yandexItem.Name);
                     using (var responseStream = await httpClient.GetStreamAsync(yandexItem.File))
                     {
-                        using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                        var subscriptions = await JsonSerializer.DeserializeAsync<IEnumerable<SubscriptionModel>>(responseStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonDateTimeConverter() } });
+                        var subscription = subscriptions.FirstOrDefault(x => x.Number == licenseName);
+                        if (subscription is null)
                         {
-                            await responseStream.CopyToAsync(fileStream);
+                            return default;
                         }
-                    }
 
-                    string jsonContent = File.ReadAllText(path);
-                    var subscriptions = JsonSerializer.Deserialize<IEnumerable<SubscriptionModel>>(jsonContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonDateTimeConverter() } });
-                    var subscription = subscriptions.FirstOrDefault(x => x.Number == licenseName);
-                    if (subscription is null)
-                    {
-                        return default;
+                        return subscription.Date;
                     }
-
-                    return subscription.Date;
 
                 }
             }
@@ -224,7 +234,7 @@ namespace A0Utils.Wpf.Services
             }
         }
 
-        private async Task<Result> DownloadLicenseFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
+        private async Task<Result<string>> DownloadLicenseFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
         {
             try
             {
@@ -235,37 +245,51 @@ namespace A0Utils.Wpf.Services
 
                 if (licenseName.Split('.').Length > 2)
                 {
-                    return Result.Failure("Лицензия должна быть в формате .ISL");
+                    return Result.Failure<string>("Лицензия должна быть в формате .ISL");
                 }
 
                 var license = yandexResource.Items.FirstOrDefault(x => x.Name == licenseName);
                 if (license == null)
                 {
                     _logger.LogError($"Лицензия {licenseName} не найдена");
-                    return Result.Failure($"Лицензия {licenseName} не найдена");
+                    return Result.Failure<string>($"Лицензия {licenseName} не найдена");
                 }
 
-                var path = Path.Combine(_settings.A0InstallationPath, license.Name);
+                var path = Path.Combine(AppPath, license.Name);
 
                 using (var responseStream = await httpClient.GetStreamAsync(license.File))
                 {
-                    using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                    using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 8192, useAsync: true))
                     {
-                        await responseStream.CopyToAsync(fileStream);
+                        byte[] buffer = new byte[8192];
+                        long totalBytes = license.Size;
+                        long totalRead = 0;
+                        int bytesRead;
+
+                        while ((bytesRead = await responseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead);
+                            totalRead += bytesRead;
+
+                            if (totalBytes > 0)
+                            {
+                                DownloadLicenseProgressChanged?.Invoke(this, (int)((totalRead * 100) / totalBytes));
+                            }
+                        }
                     }
                 }
 
-                return Result.Success();
+                return path;
             }
             catch (System.Exception ex)
             {
                 _logger.LogError("Ошибка при скачивании лицензии: {Error}", ex.Message);
-                return Result.Failure("Ошибка при скачивании лицензии");
+                return Result.Failure<string>("Ошибка при скачивании лицензии");
             }
 
         }
 
-        private async Task<Result<(DateTime A0LicenseExp, DateTime PIRLicenseExp)>> DownloadLicenseDescriptionFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
+        private async Task<Result<(DateTime A0LicenseExp, DateTime PIRLicenseExp)>> DownloadAndParseLicenseDescriptionFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
         {
             try
             {

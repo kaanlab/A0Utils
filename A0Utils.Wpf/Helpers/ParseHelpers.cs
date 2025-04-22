@@ -23,7 +23,7 @@ namespace A0Utils.Wpf.Helpers
             }
             else
             {
-                return Result.Failure<DateTime>("Failed to parse date.");
+                return default;
             }
         }
 
@@ -44,7 +44,7 @@ namespace A0Utils.Wpf.Helpers
             }
             else
             {
-                return Result.Failure<DateTime>("Failed to parse date.");
+                return default;
             }
         }
     }

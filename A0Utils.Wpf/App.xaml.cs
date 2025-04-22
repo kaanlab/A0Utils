@@ -23,7 +23,7 @@ namespace A0Utils.Wpf
             base.OnStartup(e);
 
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.File("a0utils.log", rollingInterval: RollingInterval.Day)
+                .WriteTo.File("a0utils.log", rollOnFileSizeLimit: true, fileSizeLimitBytes: 1024 * 1024)
                 .CreateLogger();
 
             var mainViewModel = _serviceProvider.GetService<MainViewModel>();
