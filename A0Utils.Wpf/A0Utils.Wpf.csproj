@@ -202,9 +202,6 @@
     <Resource Include="FodyWeavers.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="download.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="update_folder.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
