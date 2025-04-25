@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace A0Utils.Wpf.Models
 {
-    public sealed class UpdateModel : INotifyPropertyChanged
+    public class UpdateModel : INotifyPropertyChanged
     {
         public string Name { get; set; }
         public string Category { get; set; }
