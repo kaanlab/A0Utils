@@ -1,4 +1,5 @@
-﻿using A0Utils.Wpf.Services;
+﻿using A0Utils.Wpf.Helpers;
+using A0Utils.Wpf.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CSharpFunctionalExtensions;
@@ -38,6 +39,22 @@ namespace A0Utils.Wpf.ViewModels
             _yandexService.DownloadLicenseProgressChanged += (s, progress) => DownloadProgress = progress;
         }
 
+        public event Action RequestClose;
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                if (_isBusy != value)
+                {
+                    _isBusy = value;
+                    OnPropertyChanged(nameof(IsBusy));
+                }
+            }
+        }
+
         private int _downloadProgress;
         public int DownloadProgress
         {
@@ -47,13 +64,6 @@ namespace A0Utils.Wpf.ViewModels
                 _downloadProgress = value;
                 OnPropertyChanged(nameof(DownloadProgress));
             }
-        }
-
-        private string _infoMessage;
-        public string InfoMessage
-        {
-            get => _infoMessage;
-            set => SetProperty(ref _infoMessage, value);
         }
 
         private string _licenseName;
@@ -84,7 +94,7 @@ namespace A0Utils.Wpf.ViewModels
                     var foundLicense = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
                     if (!foundLicense.Any())
                     {
-                        InfoMessage = "Лицензионные файлы не найдены. Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)";
+                        MessageDialogHelper.ShowError("Лицензионные файлы не найдены. Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)");
                     }
                     else
                     {
@@ -94,13 +104,13 @@ namespace A0Utils.Wpf.ViewModels
                 else
                 {
                     _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", _a0InstallationPath);
-                    InfoMessage = $"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}";
+                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка");
-                InfoMessage = $"Ошибка: {ex.Message}";
+                MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }
 
@@ -119,24 +129,37 @@ namespace A0Utils.Wpf.ViewModels
             {
                 if (Licenses.Count == 0)
                 {
-                    InfoMessage = $"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}";
+                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
                     return;
                 }
 
-                foreach(var license in Licenses)
+                foreach (var license in Licenses)
                 {
                     await DownloadAndCopyLicense(license);
                 }
 
-                InfoMessage = "Лицензии обновлены!";
+                MessageDialogHelper.ShowInfo("Лицензии обновлены!");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка");
-                InfoMessage = $"Ошибка: {ex.Message}";
-            }        
+                MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
+            }
         }
 
+        private ICommand _closeDialogCommand;
+        public ICommand CloseDialogCommand
+        {
+            get
+            {
+                return _closeDialogCommand ??= new RelayCommand(CloseDialog);
+            }
+        }
+
+        private void CloseDialog()
+        {
+            RequestClose?.Invoke();
+        }
 
         private ICommand _addLicenseCommand;
         public ICommand AddLicenseCommand
@@ -151,50 +174,53 @@ namespace A0Utils.Wpf.ViewModels
         {
             try
             {
-                if (Licenses is null || Licenses.Count == 0) 
+                if (Licenses is null || Licenses.Count == 0)
                 {
-                    InfoMessage = $"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}";
+                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
                     return;
                 }
 
                 if (string.IsNullOrEmpty(LicenseName))
                 {
-                    InfoMessage = "Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)";
+                    MessageDialogHelper.ShowError("Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)");
                     return;
                 }
 
-                if(LicenseName.Length < 8)
+                if (LicenseName.Length < 8)
                 {
                     LicenseName = LicenseName.PadLeft(8, '0');
                 }
 
-                var fileNameResult = await DownloadAndCopyLicense(LicenseName); 
-                if(fileNameResult.IsFailure)
+                var fileNameResult = await DownloadAndCopyLicense(LicenseName);
+                if (fileNameResult.IsFailure)
                 {
-                    InfoMessage = fileNameResult.Error;
+                    MessageDialogHelper.ShowError(fileNameResult.Error);
                     return;
                 }
 
                 Licenses.Add(fileNameResult.Value);
+                MessageDialogHelper.ShowInfo($"Лицензия {fileNameResult.Value} добавлена!");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка");
-                InfoMessage = $"Ошибка: {ex.Message}";
+                MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }
 
         private async Task<Result<string>> DownloadAndCopyLicense(string licenseName)
         {
+            IsBusy = true;
             var licenseResult = await _yandexService.DownloadLicense(licenseName);
             if (licenseResult.IsFailure)
-            {               
+            {
                 return licenseResult;
             }
-
+             
             var licenses = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
             var destinationDirs = licenses.Select(x => x.DirectoryPath).Distinct();
             _fileOperationsService.CopyToAllFolders(licenseResult.Value, destinationDirs);
+            IsBusy = false;
 
             return Path.GetFileName(licenseResult.Value);
         }

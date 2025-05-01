@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:A0Utils.Wpf.Views"
         mc:Ignorable="d"
-        Title="LicenseView" Height="450" Width="800">
+        Title="LicenseView" Height="500" Width="800">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -13,18 +14,17 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" HorizontalAlignment="Center" Text="Управление лицензиями" FontSize="16"/>
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding InfoMessage, UpdateSourceTrigger=PropertyChanged}" Foreground="Navy" FontSize="16" Margin="10,0" />
-        <StackPanel Orientation="Vertical" Grid.Row="2" Margin="5">
-            <Label Content="Название лицензии" />
+        <StackPanel Orientation="Vertical" Grid.Row="1" Margin="5">
+            <Label Content="Добавить новую лицензию" />
             <TextBox Text="{Binding LicenseName, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
             <Button Content="Добавить" Command="{Binding AddLicenseCommand}" HorizontalAlignment="Right" Margin="3" Padding="5"/>
         </StackPanel>
-        <ListBox Grid.Row="3" ItemsSource="{Binding Licenses}" Margin="10" />
-        <ProgressBar Grid.Row="4" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="10,0"/>
-        <Button Grid.Row="5" Grid.ColumnSpan="2" Content="Обновить лицензии" Command="{Binding UpdateLicensesCommand}" HorizontalAlignment="Right" Margin="10" Padding="5"/>
-
+        <ListBox Grid.Row="2" ItemsSource="{Binding Licenses}" Height="200" ScrollViewer.VerticalScrollBarVisibility="Visible" Margin="10" />
+        <ProgressBar Grid.Row="3" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="10,0"/>
+        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Обновить все лицензии" Command="{Binding UpdateLicensesCommand}" HorizontalAlignment="Left" Margin="10" Padding="5"/>
+        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Закрыть" Command="{Binding CloseDialogCommand}" HorizontalAlignment="Right" Margin="10" Padding="5"/>
+        <xctk:BusyIndicator IsBusy="{Binding IsBusy}" BusyContent="Копирование лицензий..." HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
     </Grid>
 </Window>

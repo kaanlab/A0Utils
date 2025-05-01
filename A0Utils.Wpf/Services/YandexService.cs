@@ -2,6 +2,7 @@
 using A0Utils.Wpf.Helpers;
 using A0Utils.Wpf.Models;
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,11 @@ namespace A0Utils.Wpf.Services
 {
     public sealed class YandexService
     {
+        private const string updatesKey = "updates";
+        private const string licenseKey = "license";
+
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IMemoryCache _memoryCache;
         private readonly ILogger _logger;
         private readonly SettingsService _settingsService;
 
@@ -29,11 +34,13 @@ namespace A0Utils.Wpf.Services
         public event EventHandler<int> DownloadLicenseProgressChanged;
 
         public YandexService(
-            IHttpClientFactory httpClientFactory, 
-            ILogger<YandexService> logger, 
-            SettingsService settingsService)
+            IHttpClientFactory httpClientFactory,
+            ILogger<YandexService> logger,
+            SettingsService settingsService,
+            IMemoryCache memoryCache)
         {
             _httpClientFactory = httpClientFactory;
+            _memoryCache = memoryCache;
             _logger = logger;
             _settingsService = settingsService;
 
@@ -42,34 +49,23 @@ namespace A0Utils.Wpf.Services
 
         public async Task<Result<IEnumerable<UpdateModel>>> GetUpdates()
         {
-            try
+            if (!_memoryCache.TryGetValue(updatesKey, out IEnumerable<UpdateModel> updateModels))
             {
-                var httpClient = _httpClientFactory.CreateClient("yandexClient");
-                var response = await httpClient.GetAsync($"{_settings.YandexUrl}{_settings.UpdatesUrl}", HttpCompletionOption.ResponseHeadersRead);
-                using (var contentStream = await response.Content.ReadAsStreamAsync())
+                var result = await GetUpdatesByHttp();
+                if(result.IsFailure)
                 {
-                    var yandexItem = await JsonSerializer.DeserializeAsync<YandexItem>(contentStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    var path = Path.Combine(_settings.DownloadUpdatesPath, yandexItem.Name);
-
-                    using (var responseStream = await httpClient.GetStreamAsync(yandexItem.File))
-                    {
-                        using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
-                        {
-                            await responseStream.CopyToAsync(fileStream);
-                        }
-                    }
-
-                    string jsonContent = File.ReadAllText(path);
-                    var updates = JsonSerializer.Deserialize<IEnumerable<UpdateModel>>(jsonContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    return Result.Success(updates);
+                    return Result.Failure<IEnumerable<UpdateModel>>(result.Error);
                 }
+
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromHours(1));
+
+                _memoryCache.Set(updatesKey, result.Value, cacheEntryOptions);
+
+                updateModels = result.Value;
             }
-            catch (System.Exception ex)
-            {
-                _logger.LogError("Ошибка при получении обновленй {Error}", ex);
-                return Result.Failure<IEnumerable<UpdateModel>>($"Ошибка при получении обновленй");
-            }
+
+            return Result.Success(updateModels);
         }
 
         public async Task<Result> DownloadUpdates(IEnumerable<UpdateModel> updates, string downloadPath)
@@ -126,13 +122,23 @@ namespace A0Utils.Wpf.Services
             try
             {
                 var httpClient = _httpClientFactory.CreateClient("yandexClient");
-                var yandexResourceResult = await GetLicenseResource(httpClient, 1000);
-                if (yandexResourceResult.IsFailure)
+                if (!_memoryCache.TryGetValue(licenseKey, out YandexEmbedded yandexResource))
                 {
-                    return Result.Failure<string>(yandexResourceResult.Error);
-                }
+                    var yandexResourceResult = await GetLicenseResource(httpClient, 1000);
+                    if (yandexResourceResult.IsFailure)
+                    {
+                        return Result.Failure<string>(yandexResourceResult.Error);
+                    }
 
-                return await DownloadLicenseFile(licenseName, yandexResourceResult.Value, httpClient);
+                    var cacheEntryOptions = new MemoryCacheEntryOptions()
+                        .SetAbsoluteExpiration(TimeSpan.FromHours(1));
+
+                    _memoryCache.Set(licenseKey, yandexResourceResult.Value, cacheEntryOptions);
+
+                    yandexResource = yandexResourceResult.Value;
+                }               
+
+                return await DownloadLicenseFile(licenseName, yandexResource, httpClient);
 
             }
             catch (System.Exception ex)
@@ -177,6 +183,29 @@ namespace A0Utils.Wpf.Services
             {
                 _logger.LogError("Ошибка при получении лицензии: {Error}", ex);
                 return Result.Failure<LicensesExpModel>("Ошибка при получении лицензии");
+            }
+        }
+
+        private async Task<Result<IEnumerable<UpdateModel>>> GetUpdatesByHttp()
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient("yandexClient");
+                var response = await httpClient.GetAsync($"{_settings.YandexUrl}{_settings.UpdatesUrl}", HttpCompletionOption.ResponseHeadersRead);
+                using (var contentStream = await response.Content.ReadAsStreamAsync())
+                {
+                    var yandexItem = await JsonSerializer.DeserializeAsync<YandexItem>(contentStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    using (var responseStream = await httpClient.GetStreamAsync(yandexItem.File))
+                    {
+                        var updates = await JsonSerializer.DeserializeAsync<IEnumerable<UpdateModel>>(responseStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        return Result.Success(updates);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError("Ошибка при получении обновленй {Error}", ex);
+                return Result.Failure<IEnumerable<UpdateModel>>($"Ошибка при получении обновленй");
             }
         }
 

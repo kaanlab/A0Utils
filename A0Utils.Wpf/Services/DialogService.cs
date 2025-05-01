@@ -23,6 +23,7 @@ namespace A0Utils.Wpf.Services
                 DataContext = _settingsViewModel                
             };
 
+            _settingsViewModel.RequestClose += () => dialog.Close();
             dialog.ShowDialog();
         }
 
@@ -34,6 +35,7 @@ namespace A0Utils.Wpf.Services
                 DataContext = _licenseViewModel
             };
 
+            _licenseViewModel.RequestClose += () => dialog.Close();
             dialog.ShowDialog();
         }
     }
