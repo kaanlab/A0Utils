@@ -1,7 +1,9 @@
-﻿using A0Utils.Wpf.Models;
+﻿using A0Utils.Wpf.Helpers;
+using A0Utils.Wpf.Models;
 using A0Utils.Wpf.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Input;
@@ -18,6 +20,8 @@ namespace A0Utils.Wpf.ViewModels
 
             LoadSettings();
         }
+
+        public event Action RequestClose;
 
         private string _a0InstallationPath;
         public string A0InstallationPath
@@ -75,6 +79,7 @@ namespace A0Utils.Wpf.ViewModels
             };
 
             await _settingsService.SaveWithoutDownloadPath(settings);
+            MessageDialogHelper.ShowInfo("Настройки сохранены!");
         }
 
         private ICommand _saveA0PathCommand;
@@ -94,6 +99,20 @@ namespace A0Utils.Wpf.ViewModels
             {
                 A0InstallationPath = folderDialog.SelectedPath;
             }
+        }
+
+        private ICommand _closeDialogCommand;
+        public ICommand CloseDialogCommand
+        {
+            get
+            {
+                return _closeDialogCommand ??= new RelayCommand(CloseDialog);
+            }
+        }
+
+        private void CloseDialog()
+        {
+            RequestClose?.Invoke();
         }
 
 

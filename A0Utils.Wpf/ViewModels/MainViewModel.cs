@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -69,13 +70,6 @@ namespace A0Utils.Wpf.ViewModels
             }
         }
 
-        private string _infoMessage;
-        public string InfoMessage
-        {
-            get => _infoMessage;
-            set => SetProperty(ref _infoMessage, value);
-        }
-
         private string _a0LicenseExp;
         public string A0LicenseExp
         {
@@ -135,14 +129,14 @@ namespace A0Utils.Wpf.ViewModels
             {
                 if (string.IsNullOrEmpty(SelectedLicense))
                 {
-                    InfoMessage = "Выберите лицензию из списка";
+                    MessageDialogHelper.ShowError("Выберите лицензию из списка");
                     return;
                 }
 
                 var licenseResult = await _yandexService.GetLicensesInfo(SelectedLicense);
                 if (licenseResult.IsFailure)
                 {
-                    InfoMessage = licenseResult.Error;
+                    MessageDialogHelper.ShowError(licenseResult.Error);
                     return;
                 }
 
@@ -161,16 +155,17 @@ namespace A0Utils.Wpf.ViewModels
                 var updatesResult = await _yandexService.GetUpdates();
                 if (updatesResult.IsFailure)
                 {
-                    InfoMessage = updatesResult.Error;
+                    MessageDialogHelper.ShowError(updatesResult.Error);
                     return;
                 }
 
                 UpdateModels = new ObservableCollection<UpdateModel>(updatesResult.Value);
+                MessageDialogHelper.ShowInfo("Информация о лицензии получена!");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка");
-                InfoMessage = $"Ошибка: {ex.Message}";
+                MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }
 
@@ -188,18 +183,18 @@ namespace A0Utils.Wpf.ViewModels
             var selectedUpdates = UpdateModels.Where(item => item.IsSelected).ToList();
             if (selectedUpdates.Count == 0)
             {
-                InfoMessage = "Выберите обновления для загрузки";
+                MessageDialogHelper.ShowError("Выберите обновления для загрузки");
                 return;
             }
 
             var downloadResult = await _yandexService.DownloadUpdates(selectedUpdates, DownloadPath);
             if (downloadResult.IsFailure)
             {
-                InfoMessage = downloadResult.Error;
+                MessageDialogHelper.ShowError(downloadResult.Error);
                 return;
             }
 
-            InfoMessage = "Обновления загружены!";
+            MessageDialogHelper.ShowInfo("Обновления загружены!");
         }
 
 
@@ -218,11 +213,16 @@ namespace A0Utils.Wpf.ViewModels
 
             if (folderDialog.ShowDialog() == DialogResult.OK)
             {
-                DownloadPath = folderDialog.SelectedPath;
+                var path = Path.Combine(folderDialog.SelectedPath, "A0Updates");
+                if(!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                DownloadPath = path;
                 await _settingsService.UpdateDownloadPath(DownloadPath);
             }
 
-            InfoMessage = "Путь сохранения обновлений изменен!";
+            MessageDialogHelper.ShowInfo("Путь сохранения обновлений изменен!");
         }
 
         private ICommand _openSettingsCommand;
@@ -262,7 +262,7 @@ namespace A0Utils.Wpf.ViewModels
                     var foundLicense = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
                     if (!foundLicense.Any())
                     {
-                        InfoMessage = "Лицензионные файлы не найдены";
+                        MessageDialogHelper.ShowError("Лицензионные файлы не найдены");
                     }
                     else
                     {
@@ -272,13 +272,13 @@ namespace A0Utils.Wpf.ViewModels
                 else
                 {
                     _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", _a0InstallationPath);
-                    InfoMessage = $"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}";
+                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка");
-                InfoMessage = $"Ошибка: {ex.Message}";
+                MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }
     }

@@ -61,7 +61,8 @@ namespace A0Utils.Wpf.Services
                 var settings = JsonSerializer.Deserialize<SettingsModel>(content);
                 if (string.IsNullOrEmpty(settings.DownloadUpdatesPath))
                 {
-                    settings.DownloadUpdatesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    settings.DownloadUpdatesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "A0Updates");
+                    Directory.CreateDirectory(settings.DownloadUpdatesPath);
                 }
 
                 return settings;

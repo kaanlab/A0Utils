@@ -38,6 +38,7 @@
             <Label Content="Обновления" />
             <TextBox Text="{Binding UpdatesUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
         </StackPanel>
-        <Button Grid.Row="6" Grid.ColumnSpan="2" Content="Сохранить" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Right" Margin="10" Padding="5"/>
+        <Button Grid.Row="6" Grid.ColumnSpan="2" Content="Сохранить" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Left" Margin="7,10" Padding="5"/>
+        <Button Grid.Row="6" Grid.ColumnSpan="2" Content="Закрыть" HorizontalAlignment="Right" Command="{Binding CloseDialogCommand}" Margin="7,10" Padding="5"/>
     </Grid>
 </Window>

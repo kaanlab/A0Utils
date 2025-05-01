@@ -20,7 +20,7 @@ namespace A0Utils.Wpf
                 .AddHttpMessageHandler<ProgressMessageHandler>();
 
             services.AddLogging(builder => builder.AddSerilog());
-
+            services.AddMemoryCache();
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<SettingsViewModel>();
             services.AddSingleton<LicenseViewModel>();
