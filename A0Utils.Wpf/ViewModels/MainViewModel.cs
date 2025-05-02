@@ -127,6 +127,11 @@ namespace A0Utils.Wpf.ViewModels
         {
             try
             {
+                if (UpdateModels is not null)
+                {
+                    UpdateModels.Clear();
+                }
+
                 if (string.IsNullOrEmpty(SelectedLicense))
                 {
                     MessageDialogHelper.ShowError("Выберите лицензию из списка");
@@ -159,7 +164,15 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                UpdateModels = new ObservableCollection<UpdateModel>(updatesResult.Value);
+                var filteredCollectionResult = updatesResult.Value.ApplyFilter(licenseResult.Value);
+                if(filteredCollectionResult.IsFailure)
+                {                    
+                    MessageDialogHelper.ShowError(filteredCollectionResult.Error);
+                    return;
+                }
+
+                UpdateModels = new ObservableCollection<UpdateModel>(filteredCollectionResult.Value);
+
                 MessageDialogHelper.ShowInfo("Информация о лицензии получена!");
             }
             catch (Exception ex)

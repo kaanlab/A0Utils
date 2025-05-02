@@ -86,7 +86,7 @@
     <Compile Include="Helpers\PathHelpers.cs" />
     <Compile Include="Helpers\MessageDialogHelper.cs" />
     <Compile Include="Models\LicenseModel.cs" />
-    <Compile Include="Models\LicensesExpModel.cs" />
+    <Compile Include="Models\LicenseInfoModel.cs" />
     <Compile Include="Models\SettingsModel.cs" />
     <Compile Include="Models\SubscriptionModel.cs" />
     <Compile Include="Models\UpdateModel.cs" />
