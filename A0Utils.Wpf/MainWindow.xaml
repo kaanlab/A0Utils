@@ -67,7 +67,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="420"/>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto"/>
                 <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
                 <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="70"/>                
             </DataGrid.Columns>
