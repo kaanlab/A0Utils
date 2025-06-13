@@ -1,4 +1,5 @@
 ﻿using A0Utils.Wpf.Helpers;
+using A0Utils.Wpf.Models;
 using A0Utils.Wpf.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,7 +18,7 @@ namespace A0Utils.Wpf.ViewModels
     {
         private readonly SettingsService _settingsService;
         private readonly FileOperationsService _fileOperationsService;
-        private readonly ILogger<LicenseViewModel> _logger;
+        private readonly ILogger _logger;
         private readonly YandexService _yandexService;
 
         private readonly string _a0InstallationPath;
@@ -73,8 +74,8 @@ namespace A0Utils.Wpf.ViewModels
             set => SetProperty(ref _licenseName, value);
         }
 
-        private ObservableCollection<string> _licenses;
-        public ObservableCollection<string> Licenses
+        private ObservableCollection<UpdateLicenseModel> _licenses;
+        public ObservableCollection<UpdateLicenseModel> Licenses
         {
             get => _licenses;
             set
@@ -98,7 +99,11 @@ namespace A0Utils.Wpf.ViewModels
                     }
                     else
                     {
-                        Licenses = new ObservableCollection<string>(foundLicense.Select(x => x.FileName).Distinct());
+                        Licenses = new ObservableCollection<UpdateLicenseModel>
+                            (foundLicense
+                                .Select(x => x.FileName)
+                                .Distinct()
+                                .Select(x => new UpdateLicenseModel { Name = x, IsSelected = false }));
                     }
                 }
                 else
@@ -135,7 +140,7 @@ namespace A0Utils.Wpf.ViewModels
 
                 foreach (var license in Licenses)
                 {
-                    await DownloadAndCopyLicense(license);
+                    await DownloadAndCopyLicense(license.Name);
                 }
 
                 MessageDialogHelper.ShowInfo("Лицензии обновлены!");
@@ -198,7 +203,7 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                Licenses.Add(fileNameResult.Value);
+                Licenses.Add(new UpdateLicenseModel { Name = fileNameResult.Value, IsSelected = false });
                 MessageDialogHelper.ShowInfo($"Лицензия {fileNameResult.Value} добавлена!");
             }
             catch (Exception ex)
@@ -219,7 +224,12 @@ namespace A0Utils.Wpf.ViewModels
              
             var licenses = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
             var destinationDirs = licenses.Select(x => x.DirectoryPath).Distinct();
-            _fileOperationsService.CopyToAllFolders(licenseResult.Value, destinationDirs);
+            var copyResult = _fileOperationsService.CopyToAllFolders(licenseResult.Value, destinationDirs);
+            if (copyResult.IsFailure)
+            {
+                IsBusy = false;
+                return Result.Failure<string>(copyResult.Error);
+            }
             IsBusy = false;
 
             return Path.GetFileName(licenseResult.Value);

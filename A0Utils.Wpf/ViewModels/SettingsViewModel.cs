@@ -63,11 +63,11 @@ namespace A0Utils.Wpf.ViewModels
         {
             get
             {
-                return _saveSettingsCommand ??= new AsyncRelayCommand(SaveSettings);
+                return _saveSettingsCommand ??= new RelayCommand(SaveSettings);
             }
         }
 
-        private async Task SaveSettings()
+        private void SaveSettings()
         {
             var settings = new SettingsModel
             {
@@ -78,7 +78,7 @@ namespace A0Utils.Wpf.ViewModels
                 UpdatesUrl = UpdatesUrl               
             };
 
-            await _settingsService.SaveWithoutDownloadPath(settings);
+            _settingsService.SaveWithoutDownloadPath(settings);
             MessageDialogHelper.ShowInfo("Настройки сохранены!");
         }
 

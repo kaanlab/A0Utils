@@ -1,5 +1,6 @@
 ﻿using A0Utils.Wpf.Helpers;
 using A0Utils.Wpf.Models;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -54,10 +55,20 @@ namespace A0Utils.Wpf.Services
             }
         }
 
-        public void CopyToAllFolders(string downloadLicensePath, IEnumerable<string> destinationDirectories)
+        public Result CopyToAllFolders(string downloadLicensePath, IEnumerable<string> destinationDirectories)
         {
             foreach (var destinationDir in destinationDirectories)
             {
+                if(File.Exists(downloadLicensePath))
+                {
+                    var attributes = File.GetAttributes(downloadLicensePath);
+                    if (attributes.HasFlag(FileAttributes.ReadOnly))
+                    {
+                        attributes &= ~FileAttributes.ReadOnly; // Убираем атрибут ReadOnly
+                        File.SetAttributes(downloadLicensePath, attributes);
+                    }
+                }
+
                 string destinationFile = Path.Combine(destinationDir, Path.GetFileName(downloadLicensePath));
 
                 try
@@ -66,9 +77,12 @@ namespace A0Utils.Wpf.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Ошибка при копировании файлов лицензии: {Error}", ex.Message);
+                    _logger.LogError(ex, "Ошибка при копировании лицензии: {Error}", ex.Message);
+                    return Result.Failure($"Ошибка при копировании лицензии {destinationDir}");
                 }
             }
+
+            return Result.Success();
         }
     }
 }

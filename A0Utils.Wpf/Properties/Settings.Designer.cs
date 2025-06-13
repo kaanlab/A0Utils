@@ -22,5 +22,77 @@ namespace A0Utils.Wpf.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\ProgramData\\InfoStroy")]
+        public string A0InstallationPath {
+            get {
+                return ((string)(this["A0InstallationPath"]));
+            }
+            set {
+                this["A0InstallationPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://cloud-api.yandex.net/v1/disk/public/resources/?public_key=")]
+        public string YandexUrl {
+            get {
+                return ((string)(this["YandexUrl"]));
+            }
+            set {
+                this["YandexUrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://disk.yandex.ru/d/hnPUoXmttgFECQ")]
+        public string LicenseUrl {
+            get {
+                return ((string)(this["LicenseUrl"]));
+            }
+            set {
+                this["LicenseUrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://disk.yandex.ru/d/5qqneiWPRunFtQ")]
+        public string SubscriptionUrl {
+            get {
+                return ((string)(this["SubscriptionUrl"]));
+            }
+            set {
+                this["SubscriptionUrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://disk.yandex.ru/d/nNydYk44ylLJUg")]
+        public string UpdatesUrl {
+            get {
+                return ((string)(this["UpdatesUrl"]));
+            }
+            set {
+                this["UpdatesUrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DownloadUpdatesPath {
+            get {
+                return ((string)(this["DownloadUpdatesPath"]));
+            }
+            set {
+                this["DownloadUpdatesPath"] = value;
+            }
+        }
     }
 }

@@ -17,7 +17,7 @@ namespace A0Utils.Wpf.ViewModels
     public sealed class MainViewModel : ObservableObject
     {
         private readonly FileOperationsService _fileOperationsService;
-        private readonly ILogger<MainViewModel> _logger;
+        private readonly ILogger _logger;
         private readonly YandexService _yandexService;
         private readonly DialogService _dialogService;
         private readonly SettingsService _settingsService;
@@ -37,10 +37,11 @@ namespace A0Utils.Wpf.ViewModels
             _yandexService = yandexService;
             _dialogService = dialogService;
             _settingsService = settingsService;
+            var settings = _settingsService.GetSettings();
 
-            _a0InstallationPath = _settingsService.GetSettings().A0InstallationPath;
+            _a0InstallationPath = settings.A0InstallationPath;
             FindAllLicenses();
-            DownloadPath = _settingsService.GetSettings().DownloadUpdatesPath;
+            DownloadPath = settings.DownloadUpdatesPath;
 
             _yandexService.DownloadUpdatesProgressChanged += (s, progress) => DownloadProgress = progress;
         }
@@ -216,11 +217,11 @@ namespace A0Utils.Wpf.ViewModels
         {
             get
             {
-                return _saveToCommand ??= new AsyncRelayCommand(SaveTo);
+                return _saveToCommand ??= new RelayCommand(SaveTo);
             }
         }
 
-        private async Task SaveTo()
+        private void SaveTo()
         {
             FolderBrowserDialog folderDialog = new FolderBrowserDialog();
 
@@ -232,7 +233,7 @@ namespace A0Utils.Wpf.ViewModels
                     Directory.CreateDirectory(path);
                 }
                 DownloadPath = path;
-                await _settingsService.UpdateDownloadPath(DownloadPath);
+                _settingsService.UpdateDownloadPath(DownloadPath);
             }
 
             MessageDialogHelper.ShowInfo("Путь сохранения обновлений изменен!");

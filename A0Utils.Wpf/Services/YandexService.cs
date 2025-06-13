@@ -18,15 +18,15 @@ namespace A0Utils.Wpf.Services
 {
     public sealed class YandexService
     {
-        private const string updatesKey = "updates";
-        private const string licenseKey = "license";
+        private const string UpdatesKey = "updates";
+        private const string LicenseKey = "license";
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMemoryCache _memoryCache;
         private readonly ILogger _logger;
         private readonly SettingsService _settingsService;
 
-        private string AppPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        private readonly string appPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         private readonly SettingsModel _settings;
 
@@ -50,7 +50,7 @@ namespace A0Utils.Wpf.Services
         public async Task<Result<IEnumerable<UpdateModel>>> GetUpdates()
         {
             var updateModels = new List<UpdateModel>();
-            if (!_memoryCache.TryGetValue(updatesKey, out IEnumerable<YandexUpdateModel> yandexUpdateModels))
+            if (!_memoryCache.TryGetValue(UpdatesKey, out IEnumerable<YandexUpdateModel> yandexUpdateModels))
             {
                 var result = await GetUpdatesByHttp();
                 if (result.IsFailure)
@@ -61,7 +61,7 @@ namespace A0Utils.Wpf.Services
                 var cacheEntryOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromHours(1));
 
-                _memoryCache.Set(updatesKey, result.Value, cacheEntryOptions);
+                _memoryCache.Set(UpdatesKey, result.Value, cacheEntryOptions);
 
                 yandexUpdateModels = result.Value;
             }
@@ -123,7 +123,7 @@ namespace A0Utils.Wpf.Services
             try
             {
                 var httpClient = _httpClientFactory.CreateClient("yandexClient");
-                if (!_memoryCache.TryGetValue(licenseKey, out YandexEmbedded yandexResource))
+                if (!_memoryCache.TryGetValue(LicenseKey, out YandexEmbedded yandexResource))
                 {
                     var yandexResourceResult = await GetLicenseResource(httpClient, 1000);
                     if (yandexResourceResult.IsFailure)
@@ -134,7 +134,7 @@ namespace A0Utils.Wpf.Services
                     var cacheEntryOptions = new MemoryCacheEntryOptions()
                         .SetAbsoluteExpiration(TimeSpan.FromHours(1));
 
-                    _memoryCache.Set(licenseKey, yandexResourceResult.Value, cacheEntryOptions);
+                    _memoryCache.Set(LicenseKey, yandexResourceResult.Value, cacheEntryOptions);
 
                     yandexResource = yandexResourceResult.Value;
                 }
@@ -220,7 +220,7 @@ namespace A0Utils.Wpf.Services
                 {
                     var yandexItem = await JsonSerializer.DeserializeAsync<YandexItem>(contentStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    var path = Path.Combine(AppPath, yandexItem.Name);
+                    var path = Path.Combine(appPath, yandexItem.Name);
                     using (var responseStream = await httpClient.GetStreamAsync(yandexItem.File))
                     {
                         var subscriptions = await JsonSerializer.DeserializeAsync<IEnumerable<SubscriptionModel>>(responseStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonDateTimeConverter() } });
@@ -281,7 +281,7 @@ namespace A0Utils.Wpf.Services
                     return Result.Failure<string>($"Лицензия {licenseName} не найдена");
                 }
 
-                var path = Path.Combine(AppPath, license.Name);
+                var path = Path.Combine(appPath, license.Name);
 
                 using (var responseStream = await httpClient.GetStreamAsync(license.File))
                 {
@@ -340,7 +340,7 @@ namespace A0Utils.Wpf.Services
                     return Result.Failure<LicenseInfoModel>($"Фаил с описанием лицензий {licenseName} не найден");
                 }
 
-                var path = Path.Combine(AppPath, description.Name);
+                var path = Path.Combine(appPath, description.Name);
                 using (var responseStream = await httpClient.GetStreamAsync(description.File))
                 {
                     using (var reader = new StreamReader(responseStream, Encoding.GetEncoding("windows-1251")))

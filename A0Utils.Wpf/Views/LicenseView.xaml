@@ -6,7 +6,7 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:A0Utils.Wpf.Views"
         mc:Ignorable="d"
-        Title="LicenseView" Height="500" Width="800">
+        Title="LicenseView" Height="480" Width="540">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -19,12 +19,27 @@
         <StackPanel Orientation="Vertical" Grid.Row="1" Margin="5">
             <Label Content="Добавить новую лицензию" />
             <TextBox Text="{Binding LicenseName, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
-            <Button Content="Добавить" Command="{Binding AddLicenseCommand}" HorizontalAlignment="Right" Margin="3" Padding="5"/>
+            <Button Content="Добавить" Command="{Binding AddLicenseCommand}" HorizontalAlignment="Right" Margin="5" Padding="5"/>
         </StackPanel>
-        <ListBox Grid.Row="2" ItemsSource="{Binding Licenses}" Height="200" ScrollViewer.VerticalScrollBarVisibility="Visible" Margin="10" />
-        <ProgressBar Grid.Row="3" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="10,0"/>
-        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Обновить все лицензии" Command="{Binding UpdateLicensesCommand}" HorizontalAlignment="Left" Margin="10" Padding="5"/>
-        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Закрыть" Command="{Binding CloseDialogCommand}" HorizontalAlignment="Right" Margin="10" Padding="5"/>
+        <DataGrid Grid.Row="2" Margin="5" ItemsSource="{Binding Licenses}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Width="20">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <ProgressBar Grid.Row="3" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="5"/>
+        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Загрузить и обновить" Command="{Binding UpdateLicensesCommand}" HorizontalAlignment="Left" Margin="5" Padding="5"/>
+        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Закрыть" Command="{Binding CloseDialogCommand}" HorizontalAlignment="Right" Margin="5" Padding="5"/>
         <xctk:BusyIndicator IsBusy="{Binding IsBusy}" BusyContent="Копирование лицензий..." HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
     </Grid>
 </Window>
