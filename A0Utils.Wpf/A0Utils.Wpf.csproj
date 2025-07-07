@@ -64,10 +64,16 @@
     <ManifestKeyFile>A0Utils.Wpf_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -98,11 +104,12 @@
     <Compile Include="Helpers\ParseHelpers.cs" />
     <Compile Include="Helpers\PathHelpers.cs" />
     <Compile Include="Helpers\MessageDialogHelper.cs" />
+    <Compile Include="Models\DownloadModel.cs" />
     <Compile Include="Models\LicenseModel.cs" />
     <Compile Include="Models\LicenseInfoModel.cs" />
+    <Compile Include="Models\PriceModel.cs" />
     <Compile Include="Models\SettingsModel.cs" />
     <Compile Include="Models\SubscriptionModel.cs" />
-    <Compile Include="Models\UpdateLicenseModel.cs" />
     <Compile Include="Models\UpdateModel.cs" />
     <Compile Include="ServiceExtensions.cs" />
     <Compile Include="Services\DialogService.cs" />
@@ -157,6 +164,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

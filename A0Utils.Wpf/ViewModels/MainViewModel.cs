@@ -3,6 +3,7 @@ using A0Utils.Wpf.Models;
 using A0Utils.Wpf.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
@@ -128,14 +129,18 @@ namespace A0Utils.Wpf.ViewModels
         {
             try
             {
-                if (UpdateModels is not null)
-                {
-                    UpdateModels.Clear();
-                }
+                UpdateModels?.Clear();
 
                 if (string.IsNullOrEmpty(SelectedLicense))
                 {
                     MessageDialogHelper.ShowError("Выберите лицензию из списка");
+                    return;
+                }
+
+                var downloadLicenseResult = await DownloadAndCopyLicense(SelectedLicense);
+                if (downloadLicenseResult.IsFailure)
+                {
+                    MessageDialogHelper.ShowError(downloadLicenseResult.Error);
                     return;
                 }
 
@@ -294,6 +299,23 @@ namespace A0Utils.Wpf.ViewModels
                 _logger.LogError(ex, "Ошибка");
                 MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
+        }
+
+        private async Task<Result> DownloadAndCopyLicense(string licenseName)
+        {
+            var licenseResult = await _yandexService.DownloadLicense(licenseName);
+            if (licenseResult.IsFailure)
+            {
+                return Result.Failure(licenseResult.Error);
+            }
+
+            var copyResult = licenseResult.Value.CopyToAllFolders(_fileOperationsService, _a0InstallationPath);
+            if (copyResult.IsFailure)
+            {
+                return Result.Failure(copyResult.Error);
+            }
+
+            return Result.Success();
         }
     }
 }

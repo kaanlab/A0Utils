@@ -74,8 +74,8 @@ namespace A0Utils.Wpf.ViewModels
             set => SetProperty(ref _licenseName, value);
         }
 
-        private ObservableCollection<UpdateLicenseModel> _licenses;
-        public ObservableCollection<UpdateLicenseModel> Licenses
+        private ObservableCollection<string> _licenses;
+        public ObservableCollection<string> Licenses
         {
             get => _licenses;
             set
@@ -95,15 +95,12 @@ namespace A0Utils.Wpf.ViewModels
                     var foundLicense = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
                     if (!foundLicense.Any())
                     {
+                        Licenses = new ObservableCollection<string>();
                         MessageDialogHelper.ShowError("Лицензионные файлы не найдены. Введите номер лицензии, который указан на ключе или в программе А0 (в меню Справка -> О программе)");
                     }
                     else
                     {
-                        Licenses = new ObservableCollection<UpdateLicenseModel>
-                            (foundLicense
-                                .Select(x => x.FileName)
-                                .Distinct()
-                                .Select(x => new UpdateLicenseModel { Name = x, IsSelected = false }));
+                        Licenses = new ObservableCollection<string>(foundLicense.Select(x => x.FileName).Distinct());
                     }
                 }
                 else
@@ -140,7 +137,7 @@ namespace A0Utils.Wpf.ViewModels
 
                 foreach (var license in Licenses)
                 {
-                    await DownloadAndCopyLicense(license.Name);
+                    await DownloadAndCopyLicense(license);
                 }
 
                 MessageDialogHelper.ShowInfo("Лицензии обновлены!");
@@ -179,11 +176,11 @@ namespace A0Utils.Wpf.ViewModels
         {
             try
             {
-                if (Licenses is null || Licenses.Count == 0)
-                {
-                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
-                    return;
-                }
+                //if (Licenses is null || Licenses.Count == 0)
+                //{
+                //    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
+                //    return;
+                //}
 
                 if (string.IsNullOrEmpty(LicenseName))
                 {
@@ -203,7 +200,7 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                Licenses.Add(new UpdateLicenseModel { Name = fileNameResult.Value, IsSelected = false });
+                Licenses.Add(fileNameResult.Value);
                 MessageDialogHelper.ShowInfo($"Лицензия {fileNameResult.Value} добавлена!");
             }
             catch (Exception ex)
@@ -219,20 +216,19 @@ namespace A0Utils.Wpf.ViewModels
             var licenseResult = await _yandexService.DownloadLicense(licenseName);
             if (licenseResult.IsFailure)
             {
-                return licenseResult;
+                return Result.Failure<string>(licenseResult.Error);
             }
-             
-            var licenses = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
-            var destinationDirs = licenses.Select(x => x.DirectoryPath).Distinct();
-            var copyResult = _fileOperationsService.CopyToAllFolders(licenseResult.Value, destinationDirs);
+
+            var copyResult = licenseResult.Value.CopyToAllFolders(_fileOperationsService, _a0InstallationPath);
             if (copyResult.IsFailure)
             {
                 IsBusy = false;
                 return Result.Failure<string>(copyResult.Error);
             }
+
             IsBusy = false;
 
-            return Path.GetFileName(licenseResult.Value);
+            return Path.GetFileName(licenseResult.Value.LicensePath);
         }
     }
 }

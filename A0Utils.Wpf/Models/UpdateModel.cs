@@ -3,7 +3,6 @@ using CSharpFunctionalExtensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO.Packaging;
 using System.Linq;
 
 namespace A0Utils.Wpf.Models
@@ -89,21 +88,29 @@ namespace A0Utils.Wpf.Models
                 return Result.Failure<IEnumerable<UpdateModel>>(licenseTypeResult.Error);
             }
 
-            var pricesNames = models.Where(x => x.Category == "Справочники цен").Select(x => x.Index).ToList();
-            var pricesFilter = new HashSet<string>();
-            foreach (var item in pricesNames)
+            var prices = new List<UpdateModel>();
+            foreach (var item in models.Where(x => x.Category == "Справочники цен"))
             {
-                var result = ParseHelpers.FindPrices(data, item);
-                if (!string.IsNullOrEmpty(result))
+                var result = ParseHelpers.FindPrices(data, item.Index);
+                if (result != default)
                 {
-                    pricesFilter.Add(item);
+                    if(DateTime.TryParse(item.Date, out DateTime date))
+                    {
+                        foreach(var d in result.Dates)
+                        {
+                            if(d.Item1 <= date && date <= d.Item2)
+                            {
+                                prices.Add(item);
+                            }
+                        }
+                    }
+                    
                 }
             }
 
-            var a0 = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "A0" ).ToList();
-            var pir = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "ПИР").ToList();
+            var a0 = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "A0" && licenseInfo.A0LicenseExpAt != default).ToList();
+            var pir = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "ПИР" && licenseInfo.PIRLicenseExpAt != default).ToList();
             var nsi = models.Where(x => x.Category == "Базы НСИ" && nisFilter.Contains(x.Name)).ToList();
-            var prices = models.Where(x => x.Category == "Справочники цен" && pricesFilter.Contains(x.Index)).ToList();
             var tables = models.Where(x => x.Category == "Таблицы").ToList();
 
             var filteredCollection = new List<UpdateModel>();

@@ -1,5 +1,7 @@
-﻿using CSharpFunctionalExtensions;
+﻿using A0Utils.Wpf.Models;
+using CSharpFunctionalExtensions;
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace A0Utils.Wpf.Helpers
@@ -82,21 +84,44 @@ namespace A0Utils.Wpf.Helpers
             return string.Empty;
         }
 
-        public static string FindPrices(string[] data, string template)
+        public static PriceModel FindPrices(string[] data, string template)
         {
             string pattern = $"Справочник цен\\s+\"({Regex.Escape(template)})\"";
-            Regex regex = new Regex(pattern, RegexOptions.Compiled);
+            Regex priceRegex = new Regex(pattern, RegexOptions.Compiled);
+            Regex dateRegex = new Regex(@"с:\s*(\d{2}\.\d{2}\.\d{4})\s*до:\s*(\d{2}\.\d{2}\.\d{4})", RegexOptions.Compiled);
 
+            bool found = false;
+            var priceModel = new PriceModel();
             foreach (string line in data)
             {
-                Match match = regex.Match(line);
-                if (match.Success)
+                if (!found)
                 {
-                    // Return only the captured group (i.e. the text inside the quotes)
-                    return match.Groups[1].Value;
+                    if (priceRegex.IsMatch(line))
+                    {
+                        found = true;
+                        Match match = priceRegex.Match(line);
+                        priceModel.Name = match.Groups[1].Value;
+                    }
+                }
+                else
+                {
+                    MatchCollection matches = dateRegex.Matches(line);
+                    foreach (Match match in matches)
+                    {
+                        if (DateTime.TryParse(match.Groups[1].Value, out DateTime start) &&
+                            DateTime.TryParse(match.Groups[2].Value, out DateTime end))
+                        {
+                            priceModel.Dates.Add((start, end));
+                        }
+                    }
+
+                    // Stop if we reach another section
+                    if (!line.StartsWith("с: "))
+                        break;
                 }
             }
-            return string.Empty;
+
+            return priceModel;
         }
     }
 }

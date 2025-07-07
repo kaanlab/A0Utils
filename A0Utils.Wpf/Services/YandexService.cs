@@ -118,7 +118,7 @@ namespace A0Utils.Wpf.Services
             }
         }
 
-        public async Task<Result<string>> DownloadLicense(string licenseName)
+        public async Task<Result<DownloadModel>> DownloadLicense(string licenseName)
         {
             try
             {
@@ -128,7 +128,7 @@ namespace A0Utils.Wpf.Services
                     var yandexResourceResult = await GetLicenseResource(httpClient, 1000);
                     if (yandexResourceResult.IsFailure)
                     {
-                        return Result.Failure<string>(yandexResourceResult.Error);
+                        return Result.Failure<DownloadModel>(yandexResourceResult.Error);
                     }
 
                     var cacheEntryOptions = new MemoryCacheEntryOptions()
@@ -139,13 +139,24 @@ namespace A0Utils.Wpf.Services
                     yandexResource = yandexResourceResult.Value;
                 }
 
-                return await DownloadLicenseFile(licenseName, yandexResource, httpClient);
+                var licensePath = await DownloadLicenseFile(licenseName, yandexResource, httpClient);
+                if(licensePath.IsFailure)
+                {
+                    return Result.Failure<DownloadModel>(licensePath.Error);
+                }
+                var descriptionPath = await DownloadLicenseDescriptionFile(licenseName, yandexResource, httpClient);
+                if(descriptionPath.IsFailure)
+                {
+                    Result.Failure<DownloadModel>(descriptionPath.Error);
+                }
+
+                return new DownloadModel { LicensePath = licensePath.Value, DescriptionPath = descriptionPath.Value };
 
             }
             catch (System.Exception ex)
             {
                 _logger.LogError("Ошибка при получении лицензии: {Error}", ex);
-                return Result.Failure<string>("Ошибка при получении лицензии");
+                return Result.Failure<DownloadModel>("Ошибка при получении лицензии");
             }
         }
 
@@ -160,7 +171,7 @@ namespace A0Utils.Wpf.Services
                     return Result.Failure<LicenseInfoModel>(yandexResourceResult.Error);
                 }
 
-                var licenseResult = await DownloadAndParseLicenseDescriptionFile(licenseName, yandexResourceResult.Value, httpClient);
+                var licenseResult = await ParseLicenseDescriptionFile(licenseName, yandexResourceResult.Value, httpClient);
                 if (licenseResult.IsFailure)
                 {
                     return Result.Failure<LicenseInfoModel>(licenseResult.Error);
@@ -230,7 +241,7 @@ namespace A0Utils.Wpf.Services
                             return default;
                         }
 
-                        return subscription.Date;
+                        return subscription.Date.AddDays(365);
                     }
 
                 }
@@ -315,7 +326,65 @@ namespace A0Utils.Wpf.Services
 
         }
 
-        private async Task<Result<LicenseInfoModel>> DownloadAndParseLicenseDescriptionFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
+        private async Task<Result<string>> DownloadLicenseDescriptionFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
+        {
+            try
+            {
+                if (licenseName.EndsWith(".ISL"))
+                {
+                    licenseName = licenseName.Substring(0, licenseName.Length - 4) + ".ild";
+                }
+                else
+                {
+                    licenseName = licenseName + ".ild";
+                }
+
+                if (licenseName.Split('.').Length > 2)
+                {
+                    return Result.Failure<string>("Фаил должен быть в формате .ild");
+                }
+
+                var description = yandexResource.Items.FirstOrDefault(x => x.Name == licenseName);
+                if (description == null)
+                {
+                    _logger.LogError($"Фаил с описанием лицензий {licenseName} не найден");
+                    return Result.Failure<string>($"Фаил с описанием лицензий {licenseName} не найден");
+                }
+
+                var path = Path.Combine(appPath, description.Name);
+
+                using (var responseStream = await httpClient.GetStreamAsync(description.File))
+                {
+                    using (var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 8192, useAsync: true))
+                    {
+                        byte[] buffer = new byte[8192];
+                        long totalBytes = description.Size;
+                        long totalRead = 0;
+                        int bytesRead;
+
+                        while ((bytesRead = await responseStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead);
+                            totalRead += bytesRead;
+
+                            if (totalBytes > 0)
+                            {
+                                DownloadLicenseProgressChanged?.Invoke(this, (int)((totalRead * 100) / totalBytes));
+                            }
+                        }
+                    }
+                }
+
+                return path;
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError("Ошибка при сохранении фаила с описанием лицензий: {Error}", ex);
+                return Result.Failure<string>("Ошибка при сохранеии фаила с описанием лицензий");
+            }
+        }
+
+        private async Task<Result<LicenseInfoModel>> ParseLicenseDescriptionFile(string licenseName, YandexEmbedded yandexResource, HttpClient httpClient)
         {
             try
             {
@@ -341,6 +410,7 @@ namespace A0Utils.Wpf.Services
                 }
 
                 var path = Path.Combine(appPath, description.Name);
+
                 using (var responseStream = await httpClient.GetStreamAsync(description.File))
                 {
                     using (var reader = new StreamReader(responseStream, Encoding.GetEncoding("windows-1251")))
@@ -357,7 +427,7 @@ namespace A0Utils.Wpf.Services
                         if (pirLicenseResult.IsFailure)
                         {
                             return Result.Failure<LicenseInfoModel>(pirLicenseResult.Error);
-                        }                        
+                        }
 
                         return new LicenseInfoModel
                         {
