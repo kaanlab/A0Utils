@@ -60,7 +60,7 @@ namespace A0Utils.Wpf.Helpers
                 Match match = regex.Match(line);
                 if (match.Success)
                 {
-                        return Result.Success(match.Value);
+                    return Result.Success(match.Value);
                 }
             }
 
@@ -84,44 +84,42 @@ namespace A0Utils.Wpf.Helpers
             return string.Empty;
         }
 
-        public static PriceModel FindPrices(string[] data, string template)
+        public static List<PriceModel> FindPrices(string[] data)
         {
-            string pattern = $"Справочник цен\\s+\"({Regex.Escape(template)})\"";
-            Regex priceRegex = new Regex(pattern, RegexOptions.Compiled);
-            Regex dateRegex = new Regex(@"с:\s*(\d{2}\.\d{2}\.\d{4})\s*до:\s*(\d{2}\.\d{2}\.\d{4})", RegexOptions.Compiled);
-
-            bool found = false;
-            var priceModel = new PriceModel();
-            foreach (string line in data)
+            string fileContent = string.Join("\n", data);
+            string patternBlock = @"Лицензированы справочники:(.*?)Лицензированы индексы цен:";
+            Match matchBlock = Regex.Match(fileContent, patternBlock, RegexOptions.Singleline);
+            var priceModels = new List<PriceModel>();
+            if (matchBlock != null)
             {
-                if (!found)
+                string block = matchBlock.Groups[1].Value;
+
+                
+                var entryRegex = new Regex(@"Справочник цен\s+""([^""]+)""(.*?)(?=Справочник цен|$)", RegexOptions.Singleline);
+                var dateRegex = new Regex(@"с:\s*(\d{2}\.\d{2}\.\d{4})\s*до:\s*(\d{2}\.\d{2}\.\d{4})");
+
+                foreach (Match entry in entryRegex.Matches(block))
                 {
-                    if (priceRegex.IsMatch(line))
+                    var model = new PriceModel
                     {
-                        found = true;
-                        Match match = priceRegex.Match(line);
-                        priceModel.Name = match.Groups[1].Value;
-                    }
-                }
-                else
-                {
-                    MatchCollection matches = dateRegex.Matches(line);
-                    foreach (Match match in matches)
+                        Name = entry.Groups[1].Value,
+                        Dates = new List<(DateTime, DateTime)>()
+                    };
+
+                    foreach (Match dateMatch in dateRegex.Matches(entry.Groups[2].Value))
                     {
-                        if (DateTime.TryParse(match.Groups[1].Value, out DateTime start) &&
-                            DateTime.TryParse(match.Groups[2].Value, out DateTime end))
+                        if (DateTime.TryParse(dateMatch.Groups[1].Value, out DateTime start) &&
+                            DateTime.TryParse(dateMatch.Groups[2].Value, out DateTime end))
                         {
-                            priceModel.Dates.Add((start, end));
+                            model.Dates.Add((start, end));
                         }
                     }
 
-                    // Stop if we reach another section
-                    if (!line.StartsWith("с: "))
-                        break;
-                }
+                    priceModels.Add(model);
+                }                
             }
 
-            return priceModel;
+            return priceModels;
         }
     }
 }

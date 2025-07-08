@@ -235,7 +235,7 @@ namespace A0Utils.Wpf.Services
                     using (var responseStream = await httpClient.GetStreamAsync(yandexItem.File))
                     {
                         var subscriptions = await JsonSerializer.DeserializeAsync<IEnumerable<SubscriptionModel>>(responseStream, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonDateTimeConverter() } });
-                        var subscription = subscriptions.FirstOrDefault(x => x.Number == licenseName);
+                        var subscription = subscriptions.FirstOrDefault(x => x.Number == licenseName.TrimStart('0'));
                         if (subscription is null)
                         {
                             return default;

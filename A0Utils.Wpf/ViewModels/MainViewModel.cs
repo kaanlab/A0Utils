@@ -153,15 +153,17 @@ namespace A0Utils.Wpf.ViewModels
 
                 A0LicenseExp = licenseResult.Value.A0LicenseExpAt == default 
                     ? "Лицензия А0 отсутствует"
-                    : $"Лицензия А0 действительна до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
+                    : $"Лицензия А0 до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
 
                 PIRLicenseExp = licenseResult.Value.PIRLicenseExpAt == default 
                     ? "Лицензия ПИР отсутствует"
-                    : $"Лицензия ПИР действительна до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
+                    : $"Лицензия ПИР до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
 
                 SubscriptionLicenseExp = licenseResult.Value.SubscriptionLicenseExpAt == default
                     ? "Подписка на базы отсутствует"
-                    : $"Подписка на базы: {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}";
+                    : licenseResult.Value.SubscriptionLicenseExpAt > DateTime.Now 
+                        ? $"Подписка на базы до: {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}"
+                        : $"Подписка на базы закончилась {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}";
 
                 var updatesResult = await _yandexService.GetUpdates();
                 if (updatesResult.IsFailure)

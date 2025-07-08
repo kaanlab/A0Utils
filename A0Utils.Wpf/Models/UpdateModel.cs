@@ -37,8 +37,8 @@ namespace A0Utils.Wpf.Models
         public string Name { get; private set; }
         public string Key_type { get; private set; }
         public string Category { get; private set; }
-        public IEnumerable<string> Urls { get;  private set; }
-        public string Index { get; private set; } 
+        public IEnumerable<string> Urls { get; private set; }
+        public string Index { get; private set; }
         public string Date { get; private set; }
 
         public YandexUpdateModel(string name, string key_type, string category, IEnumerable<string> urls, string index, string date)
@@ -89,22 +89,29 @@ namespace A0Utils.Wpf.Models
             }
 
             var prices = new List<UpdateModel>();
-            foreach (var item in models.Where(x => x.Category == "Справочники цен"))
+            var pResult = ParseHelpers.FindPrices(data);
+            if (pResult.Count > 0)
             {
-                var result = ParseHelpers.FindPrices(data, item.Index);
-                if (result != default)
+                foreach (var r in pResult)
                 {
-                    if(DateTime.TryParse(item.Date, out DateTime date))
+                    var priceUpdates = models.Where(x => x.Category == "Справочники цен" && x.Index == r.Name).ToList();
+                    if (priceUpdates.Count > 0)
                     {
-                        foreach(var d in result.Dates)
+                        foreach (var priceUpdate in priceUpdates)
                         {
-                            if(d.Item1 <= date && date <= d.Item2)
+                            if (DateTime.TryParse(priceUpdate.Date, out DateTime date))
                             {
-                                prices.Add(item);
+                                foreach (var d in r.Dates)
+                                {
+                                    if (d.Item1 <= date && date <= d.Item2)
+                                    {
+                                        prices.Add(priceUpdate);
+                                    }
+                                }
+
                             }
                         }
                     }
-                    
                 }
             }
 
@@ -126,7 +133,7 @@ namespace A0Utils.Wpf.Models
         {
             foreach (var update in updates)
             {
-                if(DateTime.TryParse(update.Date, out DateTime updateDate))
+                if (DateTime.TryParse(update.Date, out DateTime updateDate))
                 {
                     if (updateDate > licenseExpDate)
                     {
