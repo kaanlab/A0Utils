@@ -144,6 +144,7 @@ namespace A0Utils.Wpf.Services
                 {
                     return Result.Failure<DownloadModel>(licensePath.Error);
                 }
+
                 var descriptionPath = await DownloadLicenseDescriptionFile(licenseName, yandexResource, httpClient);
                 if(descriptionPath.IsFailure)
                 {
@@ -447,13 +448,13 @@ namespace A0Utils.Wpf.Services
         }
     }
 
-    public class YandexResource
+    public sealed class YandexResource
     {
         public string Name { get; set; }
         public YandexEmbedded _Embedded { get; set; }
     }
 
-    public class YandexEmbedded
+    public sealed class YandexEmbedded
     {
         public YandexItem[] Items { get; set; }
         public int Limit { get; set; }
@@ -461,7 +462,7 @@ namespace A0Utils.Wpf.Services
         public int Total { get; set; }
     }
 
-    public class YandexItem
+    public sealed class YandexItem
     {
         public string Name { get; set; }
         public string File { get; set; }

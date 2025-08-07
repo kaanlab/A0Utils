@@ -10,9 +10,9 @@ using System.Windows;
 [assembly: AssemblyTitle("A0Utils.Wpf")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("ООО РЦЦС Республики Карелия")]
+[assembly: AssemblyCompany("РЦЦС Республики Карелия")]
 [assembly: AssemblyProduct("A0Utils.Wpf")]
-[assembly: AssemblyCopyright("Copyright ©  2025")]
+[assembly: AssemblyCopyright("©  2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -49,4 +49,4 @@ using System.Windows;
 //      Revision
 //
 [assembly: AssemblyVersion("1.0.5.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.5.0")]

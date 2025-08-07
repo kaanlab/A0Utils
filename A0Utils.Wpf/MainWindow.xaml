@@ -76,13 +76,17 @@
         <Button Grid.Row="9" Content="Обзор" Command="{Binding SaveToCommand}" HorizontalAlignment="Right" Margin="10" Padding="5" />
         <TextBlock Grid.Row="9" Text="{Binding DownloadPath, UpdateSourceTrigger=PropertyChanged}" Width="300" HorizontalAlignment="Left" Margin="10" Padding="5"/>
         <Button Grid.Row="9" Grid.Column="2" Content="Скачать" Command="{Binding DownloadSelectedCommand}" HorizontalAlignment="Right" Margin="0,10" Padding="5" />
-        <StatusBar VerticalAlignment="Bottom" Background="LightGray" Grid.Row="10" Grid.ColumnSpan="2" >
+        <StatusBar VerticalAlignment="Bottom" Background="LightGray" Grid.Row="10" Grid.ColumnSpan="2" >            
             <StatusBarItem>
                 <Label Content="{Binding AssemblyCopyright}" DockPanel.Dock="Top" />
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>
                 <Label Content="{Binding AssemblyCompany}" DockPanel.Dock="Top" />
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <Label Content="8(8142) 76-04-34 nik@rccs.sampo.ru" DockPanel.Dock="Top" />
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>

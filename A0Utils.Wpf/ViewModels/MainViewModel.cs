@@ -22,7 +22,6 @@ namespace A0Utils.Wpf.ViewModels
         private readonly YandexService _yandexService;
         private readonly DialogService _dialogService;
         private readonly SettingsService _settingsService;
-        private readonly string _a0InstallationPath;
 
         private static readonly string[] _assemblyInfo = AssemblyHelpers.GetAssemblyInfo();
 
@@ -38,9 +37,9 @@ namespace A0Utils.Wpf.ViewModels
             _yandexService = yandexService;
             _dialogService = dialogService;
             _settingsService = settingsService;
+
             var settings = _settingsService.GetSettings();
 
-            _a0InstallationPath = settings.A0InstallationPath;
             FindAllLicenses();
             DownloadPath = settings.DownloadUpdatesPath;
 
@@ -275,12 +274,14 @@ namespace A0Utils.Wpf.ViewModels
 
         private void FindAllLicenses()
         {
+            var settings = _settingsService.GetSettings();
+            var a0InstallationPath = settings.A0InstallationPath;
             try
             {
-                if (_fileOperationsService.IsFolderExist(_a0InstallationPath))
+                if (_fileOperationsService.IsFolderExist(a0InstallationPath))
                 {
 
-                    var foundLicense = _fileOperationsService.FindAllLicFiles(_a0InstallationPath);
+                    var foundLicense = _fileOperationsService.FindAllLicFiles(a0InstallationPath);
                     if (!foundLicense.Any())
                     {
                         MessageDialogHelper.ShowError("Лицензионные файлы не найдены");
@@ -292,8 +293,8 @@ namespace A0Utils.Wpf.ViewModels
                 }
                 else
                 {
-                    _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", _a0InstallationPath);
-                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
+                    _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", a0InstallationPath);
+                    MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {a0InstallationPath}");
                 }
             }
             catch (Exception ex)
@@ -311,7 +312,8 @@ namespace A0Utils.Wpf.ViewModels
                 return Result.Failure(licenseResult.Error);
             }
 
-            var copyResult = licenseResult.Value.CopyToAllFolders(_fileOperationsService, _a0InstallationPath);
+            var settings = _settingsService.GetSettings();
+            var copyResult = licenseResult.Value.CopyToAllFolders(_fileOperationsService, settings.A0InstallationPath);
             if (copyResult.IsFailure)
             {
                 return Result.Failure(copyResult.Error);

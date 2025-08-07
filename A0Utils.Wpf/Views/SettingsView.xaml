@@ -6,39 +6,40 @@
         xmlns:local="clr-namespace:A0Utils.Wpf.Views"
         mc:Ignorable="d"
         Title="SettingsView" Height="480" Width="540">
+
+    <Window.InputBindings>
+        <KeyBinding Key="I" Modifiers="Control+Shift" Command="{Binding ToggleGridVisibilityCommand}" />
+    </Window.InputBindings>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+
         <TextBlock Grid.Row="0" HorizontalAlignment="Center" Text="Настройки" FontSize="16"/>
-        <StackPanel Orientation="Vertical" Grid.Row="1" Margin="5">
+
+        <StackPanel Orientation="Vertical" Grid.Row="1"  Margin="5">
             <Label Content="Путь к программе А0" />
             <TextBox IsReadOnly="True" Text="{Binding A0InstallationPath, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
             <Button Content="Выбрать" Command="{Binding SaveA0PathCommand}" HorizontalAlignment="Right" Margin="3" Padding="5"/>
         </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Row="2" Margin="5">
+
+        <StackPanel Visibility="{Binding GridVisibility}" Orientation="Vertical" Grid.Row="2" Margin="5">
             <Label Content="Общая ссылка на Яндекс" />
             <TextBox Text="{Binding YandexUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
-        </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Row="3" Margin="5">
             <Label Content="Лицензии" />
             <TextBox Text="{Binding LicenseUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
-        </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Row="4" Margin="5">
             <Label Content="Подписки" />
             <TextBox Text="{Binding SubscriptionUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
-        </StackPanel>
-        <StackPanel Orientation="Vertical" Grid.Row="5" Margin="5">
             <Label Content="Обновления" />
             <TextBox Text="{Binding UpdatesUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
         </StackPanel>
-        <Button Grid.Row="6" Grid.ColumnSpan="2" Content="Сохранить" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Left" Margin="7,10" Padding="5"/>
-        <Button Grid.Row="6" Grid.ColumnSpan="2" Content="Закрыть" HorizontalAlignment="Right" Command="{Binding CloseDialogCommand}" Margin="7,10" Padding="5"/>
+
+        <Button Grid.Row="3" Grid.Column="0" Content="Сохранить" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Left" Margin="7,10" Padding="5"/>
+        <Button Grid.Row="3" Grid.Column="1" Content="Закрыть" HorizontalAlignment="Right" Command="{Binding CloseDialogCommand}" Margin="7,10" Padding="5"/>
     </Grid>
+
 </Window>

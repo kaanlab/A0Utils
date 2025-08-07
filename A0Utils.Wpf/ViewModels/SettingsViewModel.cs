@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 
@@ -56,6 +57,26 @@ namespace A0Utils.Wpf.ViewModels
         {
             get => _updatesUrl;
             set => SetProperty(ref _updatesUrl, value);
+        }
+
+        private Visibility _gridVisibility = Visibility.Collapsed;
+        public Visibility GridVisibility
+        {
+            get => _gridVisibility;
+            set => SetProperty(ref _gridVisibility, value);
+        }
+
+        private ICommand _toggleGridVisibilityCommand;
+        public ICommand ToggleGridVisibilityCommand
+        {
+            get
+            {
+                return _toggleGridVisibilityCommand ??= new RelayCommand(ToggleGridVisibility);
+            }
+        }
+        public void ToggleGridVisibility()
+        {
+            GridVisibility = GridVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private ICommand _saveSettingsCommand;
