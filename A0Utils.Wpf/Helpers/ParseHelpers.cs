@@ -87,13 +87,12 @@ namespace A0Utils.Wpf.Helpers
         public static List<PriceModel> FindPrices(string[] data)
         {
             string fileContent = string.Join("\n", data);
-            string patternBlock = @"Лицензированы справочники:(.*?)Лицензированы индексы цен:";
+            string patternBlock = @"Лицензированы справочники:\s*((?:.|\r?\n)*?)(?=\n\S|$)";
             Match matchBlock = Regex.Match(fileContent, patternBlock, RegexOptions.Singleline);
             var priceModels = new List<PriceModel>();
-            if (matchBlock != null)
+            if (matchBlock != null && matchBlock.Success)
             {
                 string block = matchBlock.Groups[1].Value;
-
                 
                 var entryRegex = new Regex(@"Справочник цен\s+""([^""]+)""(.*?)(?=Справочник цен|$)", RegexOptions.Singleline);
                 var dateRegex = new Regex(@"с:\s*(\d{2}\.\d{2}\.\d{4})\s*до:\s*(\d{2}\.\d{2}\.\d{4})");
