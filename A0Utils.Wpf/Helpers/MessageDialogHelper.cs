@@ -13,5 +13,10 @@ namespace A0Utils.Wpf.Helpers
         {
             MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
+        public static DialogResult Confirm(string message, string title = "Утилиты для А0")
+        {
+            return MessageBox.Show(message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        }
     }
 }

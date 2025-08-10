@@ -22,6 +22,7 @@ namespace A0Utils.Wpf.ViewModels
         private readonly YandexService _yandexService;
         private readonly DialogService _dialogService;
         private readonly SettingsService _settingsService;
+        private readonly UpdateService _updateService;
 
         private static readonly string[] _assemblyInfo = AssemblyHelpers.GetAssemblyInfo();
 
@@ -30,13 +31,15 @@ namespace A0Utils.Wpf.ViewModels
             ILogger<MainViewModel> logger,
             YandexService yandexService,
             DialogService dialogService,
-            SettingsService settingsService)
+            SettingsService settingsService,
+            UpdateService updateService)
         {
             _fileOperationsService = fileOperationsService;
             _logger = logger;
             _yandexService = yandexService;
             _dialogService = dialogService;
             _settingsService = settingsService;
+            _updateService = updateService;
 
             var settings = _settingsService.GetSettings();
 
@@ -114,7 +117,43 @@ namespace A0Utils.Wpf.ViewModels
             }
         }
 
-        
+        private ICommand _checkForAppUpdateCommand;
+        public ICommand CheckForAppUpdateCommand
+        {
+            get
+            {
+                return _checkForAppUpdateCommand ??= new AsyncRelayCommand(CheckForAppUpdate);
+            }
+        }
+
+        private async Task CheckForAppUpdate()
+        {
+            try
+            {
+                var currentVersion = AssemblyVersion;
+                var appVersion = await _updateService.CheckForUpdates();
+                if(new Version(appVersion.LastVersion) > new Version(currentVersion))
+                {
+                    var confirmResult = MessageDialogHelper.Confirm("Доступно обновление приложения! Скачать новую версию?");
+                    if (confirmResult == DialogResult.Yes)
+                    {
+                        await _updateService.DownloadLastVersion(appVersion.ReleaseUrl, DownloadPath, appVersion.Name);
+                        MessageDialogHelper.ShowInfo($"Обновление приложения загружено {DownloadPath}\n{appVersion.Name}");
+                    }
+                }
+                else
+                {
+                    MessageDialogHelper.ShowInfo("У вас установлена последняя версия приложения.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при проверке обновлений приложения");
+                MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
+            }
+        }
+
+
         private ICommand _getLicenseInfoCommand;
         public ICommand GetLicenseInfoCommand
         {

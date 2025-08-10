@@ -115,6 +115,7 @@
     <Compile Include="Services\DialogService.cs" />
     <Compile Include="Services\FileOperationsService.cs" />
     <Compile Include="Services\SettingsService.cs" />
+    <Compile Include="Services\UpdateService.cs" />
     <Compile Include="Services\YandexService.cs" />
     <Compile Include="ViewModels\LicenseViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
@@ -232,6 +233,9 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="update.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

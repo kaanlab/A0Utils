@@ -30,6 +30,7 @@ namespace A0Utils.Wpf
             services.AddSingleton<FileOperationsService>();
             services.AddSingleton<YandexService>();
             services.AddSingleton<SettingsService>();
+            services.AddSingleton<UpdateService>();
 
             return services.BuildServiceProvider();
         }

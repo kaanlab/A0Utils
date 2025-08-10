@@ -90,6 +90,13 @@
             </StatusBarItem>
             <Separator/>
             <StatusBarItem>
+                <Button Command="{Binding CheckForAppUpdateCommand}" BorderBrush="Transparent">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="update.png" Width="16" Height="16" />
+                    </StackPanel>
+                </Button>                
+            </StatusBarItem>
+            <StatusBarItem>
                 <Label Content="{Binding AssemblyVersion}" DockPanel.Dock="Top" />
             </StatusBarItem>
         </StatusBar>

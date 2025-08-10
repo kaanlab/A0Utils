@@ -119,6 +119,7 @@ namespace A0Utils.Wpf.Models
             var pir = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "ПИР" && licenseInfo.PIRLicenseExpAt != default).ToList();
             var nsi = models.Where(x => x.Category == "Базы НСИ" && nisFilter.Contains(x.Name)).ToList();
             var tables = models.Where(x => x.Category == "Таблицы").ToList();
+            var indexes = models.Where(x => x.Category == "Индексы к ФЕР/ТЕР").ToList();
 
             var filteredCollection = new List<UpdateModel>();
             filteredCollection.AddRange(a0.UpdateText(licenseInfo.A0LicenseExpAt));
@@ -126,6 +127,7 @@ namespace A0Utils.Wpf.Models
             filteredCollection.AddRange(nsi);
             filteredCollection.AddRange(prices);
             filteredCollection.AddRange(tables);
+            filteredCollection.AddRange(indexes);
             return filteredCollection;
         }
 
