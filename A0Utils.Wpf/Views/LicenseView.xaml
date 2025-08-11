@@ -6,25 +6,25 @@
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:local="clr-namespace:A0Utils.Wpf.Views"
         mc:Ignorable="d"
-        Title="LicenseView" Height="480" Width="540">
+        Title="LicenseView" Height="400" Width="540">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <!-- <RowDefinition Height="Auto" /> -->
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" HorizontalAlignment="Center" Text="Управление лицензиями" FontSize="16"/>
-        <StackPanel Orientation="Vertical" Grid.Row="1" Margin="5">
+        <!-- <StackPanel Orientation="Vertical" Grid.Row="1" Margin="5">
             <Label Content="Добавить новую лицензию" />
             <TextBox Text="{Binding LicenseName, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
             <Button Content="Добавить" Command="{Binding AddLicenseCommand}" HorizontalAlignment="Right" Margin="5" Padding="5"/>
-        </StackPanel>
-        <ListBox Grid.Row="2" ItemsSource="{Binding Licenses}" Height="200" ScrollViewer.VerticalScrollBarVisibility="Visible" Margin="10" />
-        <ProgressBar Grid.Row="3" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="5"/>
-        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Обновить все" Command="{Binding UpdateLicensesCommand}" HorizontalAlignment="Left" Margin="5" Padding="5"/>
-        <Button Grid.Row="4" Grid.ColumnSpan="2" Content="Закрыть" Command="{Binding CloseDialogCommand}" HorizontalAlignment="Right" Margin="5" Padding="5"/>
+        </StackPanel> -->
+        <ListBox Grid.Row="1" ItemsSource="{Binding Licenses}" Height="200" ScrollViewer.VerticalScrollBarVisibility="Visible" Margin="10" />
+        <ProgressBar Grid.Row="2" Grid.ColumnSpan="2" Minimum="0" Maximum="100" Value="{Binding DownloadProgress}" Height="25" Margin="5"/>
+        <Button Grid.Row="3" Grid.ColumnSpan="2" Content="Обновить все" Command="{Binding UpdateLicensesCommand}" HorizontalAlignment="Left" Margin="5" Padding="5"/>
+        <Button Grid.Row="3" Grid.ColumnSpan="2" Content="Закрыть" Command="{Binding CloseDialogCommand}" HorizontalAlignment="Right" Margin="5" Padding="5"/>
         <xctk:BusyIndicator IsBusy="{Binding IsBusy}" BusyContent="Копирование лицензий..." HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
     </Grid>
 </Window>
