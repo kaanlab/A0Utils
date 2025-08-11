@@ -94,5 +94,17 @@ namespace A0Utils.Wpf.Properties {
                 this["DownloadUpdatesPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsLoggingEnabled {
+            get {
+                return ((bool)(this["IsLoggingEnabled"]));
+            }
+            set {
+                this["IsLoggingEnabled"] = value;
+            }
+        }
     }
 }

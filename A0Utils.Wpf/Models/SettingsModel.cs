@@ -14,5 +14,6 @@ namespace A0Utils.Wpf.Models
         public string SubscriptionUrl { get; set; }
         public string UpdatesUrl { get; set; }
         public string DownloadUpdatesPath { get; set; }
+        public bool IsLoggingEnabled { get; set; }
     }
 }

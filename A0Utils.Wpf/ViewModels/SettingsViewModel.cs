@@ -4,7 +4,6 @@ using A0Utils.Wpf.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
@@ -59,6 +58,13 @@ namespace A0Utils.Wpf.ViewModels
             set => SetProperty(ref _updatesUrl, value);
         }
 
+        private bool _isLoggingEnabled;
+        public bool IsLoggingEnabled
+        {
+            get => _isLoggingEnabled;
+            set => SetProperty(ref _isLoggingEnabled, value);
+        }
+
         private Visibility _gridVisibility = Visibility.Collapsed;
         public Visibility GridVisibility
         {
@@ -96,8 +102,13 @@ namespace A0Utils.Wpf.ViewModels
                 YandexUrl = YandexUrl,
                 LicenseUrl = LicenseUrl,
                 SubscriptionUrl = SubscriptionUrl,
-                UpdatesUrl = UpdatesUrl               
+                UpdatesUrl = UpdatesUrl,
+                IsLoggingEnabled = IsLoggingEnabled
             };
+
+            App.LogLevel.MinimumLevel = IsLoggingEnabled
+                ? Serilog.Events.LogEventLevel.Information
+                : Serilog.Events.LogEventLevel.Fatal + 1;
 
             _settingsService.SaveWithoutDownloadPath(settings);
             MessageDialogHelper.ShowInfo("Настройки сохранены!");
@@ -146,6 +157,7 @@ namespace A0Utils.Wpf.ViewModels
             LicenseUrl = settings.LicenseUrl;
             SubscriptionUrl = settings.SubscriptionUrl;
             UpdatesUrl = settings.UpdatesUrl;
+            IsLoggingEnabled = settings.IsLoggingEnabled;
         }
     }
 }
