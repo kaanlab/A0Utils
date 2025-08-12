@@ -15,6 +15,7 @@ namespace A0Utils.Wpf.Models
         public IEnumerable<string> Urls { get; set; }
         public string Index { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
+        public LicenseStatus Status { get; set; }
 
         private bool _isSelected;
         public bool IsSelected
@@ -30,6 +31,12 @@ namespace A0Utils.Wpf.Models
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public enum LicenseStatus
+    {
+        None = 0,
+        Warning
     }
 
     public sealed record YandexUpdateModel
@@ -71,14 +78,18 @@ namespace A0Utils.Wpf.Models
         {
             string[] data = licenseInfo.Content.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries);
 
-            var nsiNames = models.Where(x => x.Category == "Базы НСИ").Select(x => x.Name).ToList();
-            var nisFilter = new List<string>();
+            var nsiNames = models.Where(x => x.Category == "Базы НСИ").ToList();
+            var nsi = new List<UpdateModel>();
             foreach (var item in nsiNames)
             {
-                var result = ParseHelpers.FindNsi(data, item);
-                if (!string.IsNullOrEmpty(result))
+                if(ParseHelpers.FindNsi(data, item.Name))              
                 {
-                    nisFilter.Add(item);
+                    nsi.Add(item);
+                }
+                else
+                {
+                    item.Status = LicenseStatus.Warning;
+                    nsi.Add(item);
                 }
             }
 
@@ -107,6 +118,11 @@ namespace A0Utils.Wpf.Models
                                     {
                                         prices.Add(priceUpdate);
                                     }
+                                    else
+                                    {
+                                        priceUpdate.Status = LicenseStatus.Warning;
+                                        prices.Add(priceUpdate);
+                                    }
                                 }
 
                             }
@@ -117,7 +133,6 @@ namespace A0Utils.Wpf.Models
 
             var a0 = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "A0" && licenseInfo.A0LicenseExpAt != default).ToList();
             var pir = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "ПИР" && licenseInfo.PIRLicenseExpAt != default).ToList();
-            var nsi = models.Where(x => x.Category == "Базы НСИ" && nisFilter.Contains(x.Name)).ToList();
             var tables = models.Where(x => x.Category == "Таблицы").ToList();
             var indexes = models.Where(x => x.Category == "Индексы к ФЕР/ТЕР").ToList();
 

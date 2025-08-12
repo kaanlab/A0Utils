@@ -67,7 +67,7 @@ namespace A0Utils.Wpf.Helpers
             return Result.Failure<string>("Failed to parse license type.");
         }
 
-        public static string FindNsi(string[] data, string template)
+        public static bool FindNsi(string[] data, string template)
         {
             string pattern = @"^\s*" + Regex.Escape(template);
             Regex regex = new Regex(pattern, RegexOptions.Compiled | RegexOptions.Multiline);
@@ -77,11 +77,11 @@ namespace A0Utils.Wpf.Helpers
                 Match match = regex.Match(line);
                 if (match.Success)
                 {
-                    return line;
+                    return true;
                 }
             }
 
-            return string.Empty;
+            return false;
         }
 
         public static List<PriceModel> FindPrices(string[] data)

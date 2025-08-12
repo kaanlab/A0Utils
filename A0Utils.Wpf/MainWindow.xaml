@@ -4,15 +4,19 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:A0Utils.Wpf"
+        xmlns:converters="clr-namespace:A0Utils.Wpf.Converters"        
         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="640">
+    
     <Window.Resources>
+        <converters:StatusToBrushConverter x:Key="StatusToBrushConverter"/>
         <CollectionViewSource x:Key="GroupedUpdateModels" Source="{Binding UpdateModels}">
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="Category"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
     </Window.Resources>
+    
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -68,7 +72,14 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="Auto"/>
-                <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*"/>
+                <DataGridTextColumn Header="Index" Binding="{Binding Index}" Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Background" 
+                            Value="{Binding Status, Converter={StaticResource StatusToBrushConverter}}"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
                 <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="70"/>                
             </DataGrid.Columns>
         </DataGrid>
