@@ -15,7 +15,6 @@ namespace A0Utils.Wpf.Models
         public IEnumerable<string> Urls { get; set; }
         public string Index { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
-        public LicenseStatus Status { get; set; }
 
         private bool _isSelected;
         public bool IsSelected
@@ -74,62 +73,62 @@ namespace A0Utils.Wpf.Models
             });
         }
 
-        public static Result<IEnumerable<UpdateModel>> ApplyFilter(this IEnumerable<UpdateModel> models, LicenseInfoModel licenseInfo)
+        public static Result<(IEnumerable<UpdateModel> AllLicenses, IEnumerable<UpdateModel> FilteredLicenses)> ApplyFilter(IEnumerable<UpdateModel> models, LicenseInfoModel licenseInfo)
         {
             string[] data = licenseInfo.Content.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries);
 
-            var nsiNames = models.Where(x => x.Category == "Базы НСИ").ToList();
+            var allNsi = models.Where(x => x.Category == "Базы НСИ").ToList();
             var nsi = new List<UpdateModel>();
-            foreach (var item in nsiNames)
+            foreach (var item in allNsi)
             {
-                if(ParseHelpers.FindNsi(data, item.Name))              
+                if (ParseHelpers.FindNsi(data, item.Name))
                 {
-                    nsi.Add(item);
-                }
-                else
-                {
-                    item.Status = LicenseStatus.Warning;
                     nsi.Add(item);
                 }
             }
+
+            foreach (var item in nsi)
+            {
+                allNsi.Remove(item);
+            }
+
+
 
             var licenseTypeResult = ParseHelpers.FindLicenseType(data);
             if (licenseTypeResult.IsFailure)
             {
-                return Result.Failure<IEnumerable<UpdateModel>>(licenseTypeResult.Error);
+                return Result.Failure<(IEnumerable<UpdateModel> AllLicenses, IEnumerable<UpdateModel> FilteredLicenses)>(licenseTypeResult.Error);
             }
 
             var prices = new List<UpdateModel>();
             var pResult = ParseHelpers.FindPrices(data);
+            var allPrices = models.Where(x => x.Category == "Справочники цен").ToList();
             if (pResult.Count > 0)
             {
-                foreach (var r in pResult)
+                foreach (var priceUpdate in allPrices)
                 {
-                    var priceUpdates = models.Where(x => x.Category == "Справочники цен" && x.Index == r.Name).ToList();
-                    if (priceUpdates.Count > 0)
+                    var r = pResult.FirstOrDefault(x => x.Name == priceUpdate.Index);
+                    if (r is not null && DateTime.TryParse(priceUpdate.Date, out DateTime date))
                     {
-                        foreach (var priceUpdate in priceUpdates)
+                        foreach (var d in r.Dates)
                         {
-                            if (DateTime.TryParse(priceUpdate.Date, out DateTime date))
+                            if (d.Item1 <= date && date <= d.Item2)
                             {
-                                foreach (var d in r.Dates)
-                                {
-                                    if (d.Item1 <= date && date <= d.Item2)
-                                    {
-                                        prices.Add(priceUpdate);
-                                    }
-                                    else
-                                    {
-                                        priceUpdate.Status = LicenseStatus.Warning;
-                                        prices.Add(priceUpdate);
-                                    }
-                                }
-
+                                prices.Add(priceUpdate);
                             }
                         }
                     }
                 }
+
+                foreach (var priceUpdate in prices)
+                {
+                    allPrices.Remove(priceUpdate);
+                }
             }
+
+            var allLicenses = new List<UpdateModel>();
+            allLicenses.AddRange(allNsi);
+            allLicenses.AddRange(allPrices);
 
             var a0 = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "A0" && licenseInfo.A0LicenseExpAt != default).ToList();
             var pir = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "ПИР" && licenseInfo.PIRLicenseExpAt != default).ToList();
@@ -143,7 +142,7 @@ namespace A0Utils.Wpf.Models
             filteredCollection.AddRange(prices);
             filteredCollection.AddRange(tables);
             filteredCollection.AddRange(indexes);
-            return filteredCollection;
+            return (allLicenses, filteredCollection);
         }
 
         private static List<UpdateModel> UpdateText(this List<UpdateModel> updates, DateTime licenseExpDate)

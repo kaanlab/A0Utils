@@ -117,6 +117,17 @@ namespace A0Utils.Wpf.ViewModels
             }
         }
 
+        private ObservableCollection<UpdateModel> _updateModelsWithoutLicense;
+        public ObservableCollection<UpdateModel> UpdateModelsWithoutLicense
+        {
+            get => _updateModelsWithoutLicense;
+            set
+            {
+                _updateModelsWithoutLicense = value;
+                OnPropertyChanged(nameof(UpdateModelsWithoutLicense));
+            }
+        }
+
         private ICommand _checkForAppUpdateCommand;
         public ICommand CheckForAppUpdateCommand
         {
@@ -132,7 +143,7 @@ namespace A0Utils.Wpf.ViewModels
             {
                 var currentVersion = AssemblyVersion;
                 var appVersion = await _updateService.CheckForUpdates();
-                if(new Version(appVersion.LastVersion) > new Version(currentVersion))
+                if (new Version(appVersion.LastVersion) > new Version(currentVersion))
                 {
                     var confirmResult = MessageDialogHelper.Confirm("Доступно обновление приложения! Скачать новую версию?");
                     if (confirmResult == DialogResult.Yes)
@@ -168,6 +179,7 @@ namespace A0Utils.Wpf.ViewModels
             try
             {
                 UpdateModels?.Clear();
+                UpdateModelsWithoutLicense?.Clear();
 
                 if (string.IsNullOrEmpty(SelectedLicense))
                 {
@@ -189,17 +201,17 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                A0LicenseExp = licenseResult.Value.A0LicenseExpAt == default 
+                A0LicenseExp = licenseResult.Value.A0LicenseExpAt == default
                     ? "Лицензия А0 отсутствует"
                     : $"Лицензия А0 до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
 
-                PIRLicenseExp = licenseResult.Value.PIRLicenseExpAt == default 
+                PIRLicenseExp = licenseResult.Value.PIRLicenseExpAt == default
                     ? "Лицензия ПИР отсутствует"
                     : $"Лицензия ПИР до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
 
                 SubscriptionLicenseExp = licenseResult.Value.SubscriptionLicenseExpAt == default
                     ? "Подписка на базы отсутствует"
-                    : licenseResult.Value.SubscriptionLicenseExpAt > DateTime.Now 
+                    : licenseResult.Value.SubscriptionLicenseExpAt > DateTime.Now
                         ? $"Подписка на базы до: {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}"
                         : $"Подписка на базы закончилась {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}";
 
@@ -210,14 +222,15 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                var filteredCollectionResult = updatesResult.Value.ApplyFilter(licenseResult.Value);
-                if(filteredCollectionResult.IsFailure)
-                {                    
-                    MessageDialogHelper.ShowError(filteredCollectionResult.Error);
+                var updateCollectionResult = UpdateModelExtensions.ApplyFilter(updatesResult.Value, licenseResult.Value);
+                if (updateCollectionResult.IsFailure)
+                {
+                    MessageDialogHelper.ShowError(updateCollectionResult.Error);
                     return;
                 }
 
-                UpdateModels = new ObservableCollection<UpdateModel>(filteredCollectionResult.Value);
+                UpdateModels = new ObservableCollection<UpdateModel>(updateCollectionResult.Value.FilteredLicenses);
+                UpdateModelsWithoutLicense = new ObservableCollection<UpdateModel>(updateCollectionResult.Value.AllLicenses);
 
                 MessageDialogHelper.ShowInfo("Информация о лицензии получена!");
             }
@@ -273,7 +286,7 @@ namespace A0Utils.Wpf.ViewModels
             if (folderDialog.ShowDialog() == DialogResult.OK)
             {
                 var path = Path.Combine(folderDialog.SelectedPath, "A0Updates");
-                if(!Directory.Exists(path))
+                if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
                 }

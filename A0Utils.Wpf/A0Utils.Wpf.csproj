@@ -100,7 +100,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Converters\JsonDateTimeConverter.cs" />
-    <Compile Include="Converters\StatusToBrushConverter.cs" />
     <Compile Include="Helpers\AssemblyHelpers.cs" />
     <Compile Include="Helpers\ParseHelpers.cs" />
     <Compile Include="Helpers\PathHelpers.cs" />
