@@ -249,6 +249,12 @@ namespace A0Utils.Wpf.ViewModels
 
         private async Task DownloadSelected()
         {
+            if (UpdateModels is null)
+            {
+                MessageDialogHelper.ShowError("Выберите лицензию из списка");
+                return;
+            }
+
             var selectedUpdates = UpdateModels.Where(item => item.IsSelected).ToList();
             if (selectedUpdates.Count == 0)
             {
@@ -264,6 +270,7 @@ namespace A0Utils.Wpf.ViewModels
             }
 
             MessageDialogHelper.ShowInfo("Обновления загружены!");
+            OpenDownloadFolder();
         }
 
 
@@ -287,11 +294,29 @@ namespace A0Utils.Wpf.ViewModels
                 {
                     Directory.CreateDirectory(path);
                 }
+
                 DownloadPath = path;
                 _settingsService.UpdateDownloadPath(DownloadPath);
             }
 
             MessageDialogHelper.ShowInfo("Путь сохранения обновлений изменен!");
+        }
+
+        private void OpenDownloadFolder()
+        {            
+            try
+            {
+                if (!Directory.Exists(DownloadPath))
+                {
+                    Directory.CreateDirectory(DownloadPath);
+                }
+                System.Diagnostics.Process.Start("explorer.exe", DownloadPath);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ошибка при открытии папки загрузок");
+                MessageDialogHelper.ShowError($"Ошибка при открытии папки загрузок: {ex.Message}");
+            }
         }
 
         private ICommand _openSettingsCommand;

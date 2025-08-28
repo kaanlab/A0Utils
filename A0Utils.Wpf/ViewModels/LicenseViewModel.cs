@@ -10,6 +10,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace A0Utils.Wpf.ViewModels
@@ -31,7 +32,9 @@ namespace A0Utils.Wpf.ViewModels
             _fileOperationsService = fileOperationsService;
             _yandexService = yandexService;
 
-            _a0InstallationPath = _settingsService.GetSettings().A0InstallationPath;
+            var settings = _settingsService.GetSettings();
+            _a0InstallationPath = settings.A0InstallationPath;
+            GridVisibility = settings.IsExtraSettingsEnabled ? Visibility.Visible : Visibility.Collapsed;
             FindAllLicenses();
 
             _yandexService.DownloadLicenseProgressChanged += (s, progress) => DownloadProgress = progress;
@@ -62,6 +65,13 @@ namespace A0Utils.Wpf.ViewModels
                 _downloadProgress = value;
                 OnPropertyChanged(nameof(DownloadProgress));
             }
+        }
+
+        private Visibility _gridVisibility = Visibility.Collapsed;
+        public Visibility GridVisibility
+        {
+            get => _gridVisibility;
+            set => SetProperty(ref _gridVisibility, value);
         }
 
         private string _licenseName;

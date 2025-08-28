@@ -27,7 +27,7 @@ namespace A0Utils.Wpf
 
             var settingsService = _serviceProvider.GetService<SettingsService>();
             var settings = settingsService.GetSettings();
-            var logLevel = settings.IsLoggingEnabled ? new LoggingLevelSwitch(LogEventLevel.Debug) : new LoggingLevelSwitch(LevelAlias.Off);
+            var logLevel = settings.IsExtraSettingsEnabled ? new LoggingLevelSwitch(LogEventLevel.Debug) : new LoggingLevelSwitch(LevelAlias.Off);
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.ControlledBy(logLevel)

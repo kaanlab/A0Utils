@@ -68,10 +68,20 @@ namespace A0Utils.Wpf.Services
                 {
                     File.Copy(downloadLicensePath, destinationFile, true); // true allows overwriting
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Log.Error(ex, "Не хватает разрешений на запись файла");
+                    return Result.Failure($"Не хватает разрешений на запись файла: {ex.Message}");
+                }
+                catch (IOException ex)
+                {
+                    Log.Error(ex, "Фаил занят");
+                    return Result.Failure($"Фаил занят: {ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Ошибка при копировании лицензии: {Error}", ex.Message);
-                    return Result.Failure($"Ошибка при копировании лицензии {destinationDir}");
+                    Log.Error(ex, "Ошибка при копировании лицензии");
+                    return Result.Failure($"Ошибка при копировании лицензии {ex.Message}");
                 }
             }
 

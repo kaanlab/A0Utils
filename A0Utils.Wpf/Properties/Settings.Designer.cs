@@ -98,12 +98,12 @@ namespace A0Utils.Wpf.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool IsLoggingEnabled {
+        public bool IsExtraSettingsEnabled {
             get {
-                return ((bool)(this["IsLoggingEnabled"]));
+                return ((bool)(this["IsExtraSettingsEnabled"]));
             }
             set {
-                this["IsLoggingEnabled"] = value;
+                this["IsExtraSettingsEnabled"] = value;
             }
         }
     }

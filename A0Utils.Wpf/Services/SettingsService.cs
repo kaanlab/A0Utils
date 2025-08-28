@@ -30,7 +30,7 @@ namespace A0Utils.Wpf.Services
                 SubscriptionUrl = Properties.Settings.Default.SubscriptionUrl,
                 UpdatesUrl = Properties.Settings.Default.UpdatesUrl,
                 YandexUrl = Properties.Settings.Default.YandexUrl,
-                IsLoggingEnabled = Properties.Settings.Default.IsLoggingEnabled
+                IsExtraSettingsEnabled = Properties.Settings.Default.IsExtraSettingsEnabled
             };
 
             if (string.IsNullOrEmpty(settings.DownloadUpdatesPath))
@@ -50,7 +50,7 @@ namespace A0Utils.Wpf.Services
             Properties.Settings.Default.UpdatesUrl = settings.UpdatesUrl;
             Properties.Settings.Default.YandexUrl = settings.YandexUrl;
             Properties.Settings.Default.DownloadUpdatesPath = settings.DownloadUpdatesPath;
-            Properties.Settings.Default.IsLoggingEnabled = settings.IsLoggingEnabled;
+            Properties.Settings.Default.IsExtraSettingsEnabled = settings.IsExtraSettingsEnabled;
 
             Properties.Settings.Default.Save();
         }

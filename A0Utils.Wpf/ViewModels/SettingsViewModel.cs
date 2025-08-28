@@ -103,7 +103,7 @@ namespace A0Utils.Wpf.ViewModels
                 LicenseUrl = LicenseUrl,
                 SubscriptionUrl = SubscriptionUrl,
                 UpdatesUrl = UpdatesUrl,
-                IsLoggingEnabled = IsLoggingEnabled
+                IsExtraSettingsEnabled = IsLoggingEnabled
             };
 
             _settingsService.SaveWithoutDownloadPath(settings);
@@ -153,7 +153,7 @@ namespace A0Utils.Wpf.ViewModels
             LicenseUrl = settings.LicenseUrl;
             SubscriptionUrl = settings.SubscriptionUrl;
             UpdatesUrl = settings.UpdatesUrl;
-            IsLoggingEnabled = settings.IsLoggingEnabled;
+            IsLoggingEnabled = settings.IsExtraSettingsEnabled;
         }
     }
 }
