@@ -3,7 +3,7 @@ using A0Utils.Wpf.Helpers;
 using A0Utils.Wpf.Models;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +23,6 @@ namespace A0Utils.Wpf.Services
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMemoryCache _memoryCache;
-        private readonly ILogger _logger;
         private readonly SettingsService _settingsService;
 
         private readonly string appPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -35,13 +34,11 @@ namespace A0Utils.Wpf.Services
 
         public YandexService(
             IHttpClientFactory httpClientFactory,
-            ILogger<YandexService> logger,
             SettingsService settingsService,
             IMemoryCache memoryCache)
         {
             _httpClientFactory = httpClientFactory;
             _memoryCache = memoryCache;
-            _logger = logger;
             _settingsService = settingsService;
 
             _settings = _settingsService.GetSettings();
@@ -113,7 +110,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при скачивании обновлений: {Error}", ex.Message);
+                Log.Error("Ошибка при скачивании обновлений: {Error}", ex.Message);
                 return Result.Failure("Ошибка при скачивании обновлений");
             }
         }
@@ -156,7 +153,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при получении лицензии: {Error}", ex);
+                Log.Error("Ошибка при получении лицензии: {Error}", ex);
                 return Result.Failure<DownloadModel>("Ошибка при получении лицензии");
             }
         }
@@ -190,7 +187,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при получении лицензии: {Error}", ex);
+                Log.Error("Ошибка при получении лицензии: {Error}", ex);
                 return Result.Failure<LicenseInfoModel>("Ошибка при получении лицензии");
             }
         }
@@ -213,7 +210,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при получении обновленй {Error}", ex);
+                Log.Error("Ошибка при получении обновленй {Error}", ex);
                 return Result.Failure<IEnumerable<YandexUpdateModel>>($"Ошибка при получении обновленй");
             }
         }
@@ -249,7 +246,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при получении файла подписки {Error}", ex);
+                Log.Error("Ошибка при получении файла подписки {Error}", ex);
                 return Result.Failure<DateTime>("Ошибка при получении файла подписки");
             }
         }
@@ -267,7 +264,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при получении списка лицензий {Error}", ex);
+                Log.Error("Ошибка при получении списка лицензий {Error}", ex);
                 return Result.Failure<YandexEmbedded>($"Ошибка при получении списка лицензий");
             }
         }
@@ -289,7 +286,7 @@ namespace A0Utils.Wpf.Services
                 var license = yandexResource.Items.FirstOrDefault(x => x.Name == licenseName);
                 if (license == null)
                 {
-                    _logger.LogError($"Лицензия {licenseName} не найдена");
+                    Log.Error($"Лицензия {licenseName} не найдена");
                     return Result.Failure<string>($"Лицензия {licenseName} не найдена");
                 }
 
@@ -321,7 +318,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при скачивании лицензии: {Error}", ex.Message);
+                Log.Error("Ошибка при скачивании лицензии: {Error}", ex.Message);
                 return Result.Failure<string>("Ошибка при скачивании лицензии");
             }
 
@@ -348,7 +345,7 @@ namespace A0Utils.Wpf.Services
                 var description = yandexResource.Items.FirstOrDefault(x => x.Name == licenseName);
                 if (description == null)
                 {
-                    _logger.LogError($"Фаил с описанием лицензий {licenseName} не найден");
+                    Log.Error($"Фаил с описанием лицензий {licenseName} не найден");
                     return Result.Failure<string>($"Фаил с описанием лицензий {licenseName} не найден");
                 }
 
@@ -380,7 +377,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при сохранении фаила с описанием лицензий: {Error}", ex);
+                Log.Error("Ошибка при сохранении фаила с описанием лицензий: {Error}", ex);
                 return Result.Failure<string>("Ошибка при сохранеии фаила с описанием лицензий");
             }
         }
@@ -406,7 +403,7 @@ namespace A0Utils.Wpf.Services
                 var description = yandexResource.Items.FirstOrDefault(x => x.Name == licenseName);
                 if (description == null)
                 {
-                    _logger.LogError($"Фаил с описанием лицензий {licenseName} не найден");
+                    Log.Error($"Фаил с описанием лицензий {licenseName} не найден");
                     return Result.Failure<LicenseInfoModel>($"Фаил с описанием лицензий {licenseName} не найден");
                 }
 
@@ -442,7 +439,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (System.Exception ex)
             {
-                _logger.LogError("Ошибка при скачивании фаила с описанием лицензий: {Error}", ex);
+                Log.Error("Ошибка при скачивании фаила с описанием лицензий: {Error}", ex);
                 return Result.Failure<LicenseInfoModel>("Ошибка при скачивании фаила с описанием лицензий");
             }
         }

@@ -1,7 +1,6 @@
 ﻿using A0Utils.Wpf.Services;
 using A0Utils.Wpf.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using System;
 using System.Net.Http.Handlers;
 
@@ -19,7 +18,6 @@ namespace A0Utils.Wpf
                 .AddHttpClient("yandexClient")
                 .AddHttpMessageHandler<ProgressMessageHandler>();
 
-            services.AddLogging(builder => builder.AddSerilog());
             services.AddMemoryCache();
 
             services.AddSingleton<MainViewModel>();

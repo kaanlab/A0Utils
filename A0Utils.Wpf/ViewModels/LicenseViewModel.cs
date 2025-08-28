@@ -4,7 +4,7 @@ using A0Utils.Wpf.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -18,7 +18,6 @@ namespace A0Utils.Wpf.ViewModels
     {
         private readonly SettingsService _settingsService;
         private readonly FileOperationsService _fileOperationsService;
-        private readonly ILogger _logger;
         private readonly YandexService _yandexService;
 
         private readonly string _a0InstallationPath;
@@ -26,12 +25,10 @@ namespace A0Utils.Wpf.ViewModels
         public LicenseViewModel(
             SettingsService settingsService,
             FileOperationsService fileOperationsService,
-            ILogger<LicenseViewModel> logger,
             YandexService yandexService)
         {
             _settingsService = settingsService;
             _fileOperationsService = fileOperationsService;
-            _logger = logger;
             _yandexService = yandexService;
 
             _a0InstallationPath = _settingsService.GetSettings().A0InstallationPath;
@@ -105,13 +102,13 @@ namespace A0Utils.Wpf.ViewModels
                 }
                 else
                 {
-                    _logger.LogError("Программа A0 не установлена или отсутствует доступ к папке {Path}", _a0InstallationPath);
+                    Log.Error("Программа A0 не установлена или отсутствует доступ к папке {Path}", _a0InstallationPath);
                     MessageDialogHelper.ShowError($"Программа A0 не установлена или отсутствует доступ к папке {_a0InstallationPath}");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка");
+                Log.Error(ex, "Ошибка");
                 MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }
@@ -144,7 +141,7 @@ namespace A0Utils.Wpf.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка");
+                Log.Error(ex, "Ошибка");
                 MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }
@@ -205,7 +202,7 @@ namespace A0Utils.Wpf.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка");
+                Log.Error(ex, "Ошибка");
                 MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
         }

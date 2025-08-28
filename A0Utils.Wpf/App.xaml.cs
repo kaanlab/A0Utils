@@ -1,4 +1,5 @@
-﻿using A0Utils.Wpf.ViewModels;
+﻿using A0Utils.Wpf.Services;
+using A0Utils.Wpf.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Core;
@@ -20,14 +21,16 @@ namespace A0Utils.Wpf
             _serviceProvider = ServiceExtensions.ConfigureServices();
         }
 
-        public static LoggingLevelSwitch LogLevel { get; } = new LoggingLevelSwitch(LevelAlias.Off);
-
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
+            var settingsService = _serviceProvider.GetService<SettingsService>();
+            var settings = settingsService.GetSettings();
+            var logLevel = settings.IsLoggingEnabled ? new LoggingLevelSwitch(LogEventLevel.Debug) : new LoggingLevelSwitch(LevelAlias.Off);
+
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.ControlledBy(LogLevel)
+                .MinimumLevel.ControlledBy(logLevel)
                 .WriteTo.File("a0utils.log", rollOnFileSizeLimit: true, fileSizeLimitBytes: 1024 * 1024)
                 .CreateLogger();
 

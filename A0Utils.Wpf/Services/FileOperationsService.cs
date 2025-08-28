@@ -1,7 +1,7 @@
 ﻿using A0Utils.Wpf.Helpers;
 using A0Utils.Wpf.Models;
 using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Logging;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,13 +11,6 @@ namespace A0Utils.Wpf.Services
 {
     public sealed class FileOperationsService
     {
-        private readonly ILogger<FileOperationsService> _logger;
-
-        public FileOperationsService(ILogger<FileOperationsService> logger)
-        {
-            _logger = logger;
-        }
-
         public bool IsFolderExist(string path) => System.IO.Directory.Exists(path);
 
         public string FindLicFile(string path)
@@ -32,7 +25,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при поиске файла лицензии: {Error}", ex.Message);
+                Log.Error(ex, "Ошибка при поиске файла лицензии: {Error}", ex.Message);
                 return string.Empty;
             }
         }
@@ -50,7 +43,7 @@ namespace A0Utils.Wpf.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при поиске файлов лицензии: {Error}", ex.Message);
+                Log.Error(ex, "Ошибка при поиске файлов лицензии: {Error}", ex.Message);
                 return [];
             }
         }
@@ -77,7 +70,7 @@ namespace A0Utils.Wpf.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Ошибка при копировании лицензии: {Error}", ex.Message);
+                    Log.Error(ex, "Ошибка при копировании лицензии: {Error}", ex.Message);
                     return Result.Failure($"Ошибка при копировании лицензии {destinationDir}");
                 }
             }

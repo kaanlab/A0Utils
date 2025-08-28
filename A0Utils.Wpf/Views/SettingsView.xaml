@@ -36,7 +36,7 @@
             <TextBox Text="{Binding SubscriptionUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
             <Label Content="Обновления" />
             <TextBox Text="{Binding UpdatesUrl, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" FontSize="16" Margin="3" />
-            <CheckBox Content="включить логирование" IsChecked="{Binding IsLoggingEnabled, Mode=TwoWay}" HorizontalAlignment="Right" Margin="3" />
+            <CheckBox Content="логирование (требуется перезапуск)" IsChecked="{Binding IsLoggingEnabled, Mode=TwoWay}" HorizontalAlignment="Right" Margin="3" />
         </StackPanel>
 
         <Button Grid.Row="3" Grid.Column="0" Content="Сохранить" Command="{Binding SaveSettingsCommand}" HorizontalAlignment="Left" Margin="7,10" Padding="5"/>

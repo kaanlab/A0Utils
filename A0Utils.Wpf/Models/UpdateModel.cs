@@ -92,8 +92,6 @@ namespace A0Utils.Wpf.Models
                 allNsi.Remove(item);
             }
 
-
-
             var licenseTypeResult = ParseHelpers.FindLicenseType(data);
             if (licenseTypeResult.IsFailure)
             {

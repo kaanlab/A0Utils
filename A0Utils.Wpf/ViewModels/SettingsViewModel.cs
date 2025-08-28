@@ -106,10 +106,6 @@ namespace A0Utils.Wpf.ViewModels
                 IsLoggingEnabled = IsLoggingEnabled
             };
 
-            App.LogLevel.MinimumLevel = IsLoggingEnabled
-                ? Serilog.Events.LogEventLevel.Information
-                : Serilog.Events.LogEventLevel.Fatal + 1;
-
             _settingsService.SaveWithoutDownloadPath(settings);
             MessageDialogHelper.ShowInfo("Настройки сохранены!");
         }
