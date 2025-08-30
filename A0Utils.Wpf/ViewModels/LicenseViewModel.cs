@@ -144,7 +144,7 @@ namespace A0Utils.Wpf.ViewModels
 
                 foreach (var license in Licenses)
                 {
-                    await DownloadAndCopyLicense(license);
+                    await DownloadAndCopyLicense(license).ConfigureAwait(false);
                 }
 
                 MessageDialogHelper.ShowInfo("Лицензии обновлены!");
@@ -200,7 +200,7 @@ namespace A0Utils.Wpf.ViewModels
                     LicenseName = LicenseName.PadLeft(8, '0');
                 }
 
-                var fileNameResult = await DownloadAndCopyLicense(LicenseName);
+                var fileNameResult = await DownloadAndCopyLicense(LicenseName).ConfigureAwait(false);
                 if (fileNameResult.IsFailure)
                 {
                     MessageDialogHelper.ShowError(fileNameResult.Error);
@@ -220,7 +220,7 @@ namespace A0Utils.Wpf.ViewModels
         private async Task<Result<string>> DownloadAndCopyLicense(string licenseName)
         {
             IsBusy = true;
-            var licenseResult = await _yandexService.DownloadLicense(licenseName);
+            var licenseResult = await _yandexService.DownloadLicense(licenseName).ConfigureAwait(false);
             if (licenseResult.IsFailure)
             {
                 return Result.Failure<string>(licenseResult.Error);

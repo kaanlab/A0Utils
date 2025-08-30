@@ -139,13 +139,13 @@ namespace A0Utils.Wpf.ViewModels
             try
             {
                 var currentVersion = AssemblyVersion;
-                var appVersion = await _updateService.CheckForUpdates();
+                var appVersion = await _updateService.CheckForUpdates().ConfigureAwait(false);
                 if (new Version(appVersion.LastVersion) > new Version(currentVersion))
                 {
                     var confirmResult = MessageDialogHelper.Confirm("Доступно обновление приложения! Скачать новую версию?");
                     if (confirmResult == DialogResult.Yes)
                     {
-                        await _updateService.DownloadLastVersion(appVersion.ReleaseUrl, DownloadPath, appVersion.Name);
+                        await _updateService.DownloadLastVersion(appVersion.ReleaseUrl, DownloadPath, appVersion.Name).ConfigureAwait(false);
                         MessageDialogHelper.ShowInfo($"Обновление приложения загружено {DownloadPath}\n{appVersion.Name}");
                     }
                 }
@@ -184,14 +184,14 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                var downloadLicenseResult = await DownloadAndCopyLicense(SelectedLicense);
+                var downloadLicenseResult = await DownloadAndCopyLicense(SelectedLicense).ConfigureAwait(false);
                 if (downloadLicenseResult.IsFailure)
                 {
                     MessageDialogHelper.ShowError(downloadLicenseResult.Error);
                     return;
                 }
 
-                var licenseResult = await _yandexService.GetLicensesInfo(SelectedLicense);
+                var licenseResult = await _yandexService.GetLicensesInfo(SelectedLicense).ConfigureAwait(false);
                 if (licenseResult.IsFailure)
                 {
                     MessageDialogHelper.ShowError(licenseResult.Error);
@@ -262,7 +262,7 @@ namespace A0Utils.Wpf.ViewModels
                 return;
             }
 
-            var downloadResult = await _yandexService.DownloadUpdates(selectedUpdates, DownloadPath);
+            var downloadResult = await _yandexService.DownloadUpdates(selectedUpdates, DownloadPath).ConfigureAwait(false);
             if (downloadResult.IsFailure)
             {
                 MessageDialogHelper.ShowError(downloadResult.Error);
@@ -380,7 +380,7 @@ namespace A0Utils.Wpf.ViewModels
 
         private async Task<Result> DownloadAndCopyLicense(string licenseName)
         {
-            var licenseResult = await _yandexService.DownloadLicense(licenseName);
+            var licenseResult = await _yandexService.DownloadLicense(licenseName).ConfigureAwait(false);
             if (licenseResult.IsFailure)
             {
                 return Result.Failure(licenseResult.Error);

@@ -75,22 +75,11 @@ namespace A0Utils.Wpf.Models
 
         public static Result<(IEnumerable<UpdateModel> AllLicenses, IEnumerable<UpdateModel> FilteredLicenses)> ApplyFilter(IEnumerable<UpdateModel> models, LicenseInfoModel licenseInfo)
         {
-            string[] data = licenseInfo.Content.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries);
+            string[] data = licenseInfo.Content?.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
             var allNsi = models.Where(x => x.Category == "Базы НСИ").ToList();
-            var nsi = new List<UpdateModel>();
-            foreach (var item in allNsi)
-            {
-                if (ParseHelpers.FindNsi(data, item.Name))
-                {
-                    nsi.Add(item);
-                }
-            }
-
-            foreach (var item in nsi)
-            {
-                allNsi.Remove(item);
-            }
+            var matchedNsi = allNsi.Where(item => ParseHelpers.FindNsi(data, item.Name)).ToList();
+            var remainingNsi = allNsi.Except(matchedNsi).ToList();
 
             var licenseTypeResult = ParseHelpers.FindLicenseType(data);
             if (licenseTypeResult.IsFailure)
@@ -125,7 +114,7 @@ namespace A0Utils.Wpf.Models
             }
 
             var allLicenses = new List<UpdateModel>();
-            allLicenses.AddRange(allNsi);
+            allLicenses.AddRange(remainingNsi);
             allLicenses.AddRange(allPrices);
 
             var a0 = models.Where(x => x.Key_type == licenseTypeResult.Value && x.Category == "A0" && licenseInfo.A0LicenseExpAt != default).ToList();
@@ -136,7 +125,7 @@ namespace A0Utils.Wpf.Models
             var filteredCollection = new List<UpdateModel>();
             filteredCollection.AddRange(a0.UpdateText(licenseInfo.A0LicenseExpAt));
             filteredCollection.AddRange(pir.UpdateText(licenseInfo.PIRLicenseExpAt));
-            filteredCollection.AddRange(nsi);
+            filteredCollection.AddRange(matchedNsi);
             filteredCollection.AddRange(prices);
             filteredCollection.AddRange(tables);
             filteredCollection.AddRange(indexes);

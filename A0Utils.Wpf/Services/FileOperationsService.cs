@@ -41,48 +41,73 @@ namespace A0Utils.Wpf.Services
 
                 return fullPaths.MapToLicenseModel();
             }
+            catch (DirectoryNotFoundException ex)
+            {
+                Log.Error(ex, "Директория не найдена");
+                return [];
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Error(ex, "Доступ запрещен");
+                return [];
+            }
             catch (Exception ex)
             {
-                Log.Error(ex, "Ошибка при поиске файлов лицензии: {Error}", ex.Message);
+                Log.Error(ex, "Ошибка при поиске файлов лицензии");
                 return [];
             }
         }
 
         public Result CopyToAllFolders(string downloadLicensePath, IEnumerable<string> destinationDirectories)
         {
+            var failures = new List<string>();
             foreach (var destinationDir in destinationDirectories)
             {
-                if(File.Exists(downloadLicensePath))
-                {
-                    var attributes = File.GetAttributes(downloadLicensePath);
-                    if (attributes.HasFlag(FileAttributes.ReadOnly))
-                    {
-                        attributes &= ~FileAttributes.ReadOnly; // Убираем атрибут ReadOnly
-                        File.SetAttributes(downloadLicensePath, attributes);
-                    }
-                }
-
-                string destinationFile = Path.Combine(destinationDir, Path.GetFileName(downloadLicensePath));
-
                 try
                 {
+                    if (File.Exists(downloadLicensePath))
+                    {
+                        try
+                        {
+                            var attributes = File.GetAttributes(downloadLicensePath);
+                            if (attributes.HasFlag(FileAttributes.ReadOnly))
+                            {
+                                attributes &= ~FileAttributes.ReadOnly; // Убираем атрибут ReadOnly
+                                File.SetAttributes(downloadLicensePath, attributes);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Не удалось изменить атрибуты файла");
+                            failures.Add($"Не удалось изменить атрибуты файла: {ex.Message}");
+                        }
+                    }
+
+                    string destinationFile = Path.Combine(destinationDir, Path.GetFileName(downloadLicensePath));
+
                     File.Copy(downloadLicensePath, destinationFile, true); // true allows overwriting
                 }
                 catch (UnauthorizedAccessException ex)
                 {
                     Log.Error(ex, "Не хватает разрешений на запись файла");
-                    return Result.Failure($"Не хватает разрешений на запись файла: {ex.Message}");
+                    failures.Add($"Не хватает разрешений на запись файла: {ex.Message}");
                 }
                 catch (IOException ex)
                 {
                     Log.Error(ex, "Фаил занят");
-                    return Result.Failure($"Фаил занят: {ex.Message}");
+                    failures.Add($"Фаил занят: {ex.Message}");
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Ошибка при копировании лицензии");
-                    return Result.Failure($"Ошибка при копировании лицензии {ex.Message}");
+                   failures.Add($"Ошибка при копировании лицензии {ex.Message}");
                 }
+            }
+
+            if (failures.Count > 0)
+            {
+                var list = string.Join(", ", failures);
+                return Result.Failure($"Ошибки при копировании лицензий: {list}");
             }
 
             return Result.Success();
