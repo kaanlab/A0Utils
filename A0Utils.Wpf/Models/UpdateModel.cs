@@ -216,13 +216,13 @@ namespace A0Utils.Wpf.Models
             }
         }
 
-        // Обновления в списке идут от новых к старым, поэтому последняя версия — первая с этим тегом
+        // Обновления идут от новых к старым: первая версия с тегом внутри категории — последняя.
         private static void MarkLatestInTag(IEnumerable<UpdateModel> updates)
         {
-            var seenTags = new HashSet<string>();
+            var seenTags = new HashSet<(string Category, string Tag)>();
             foreach (var update in updates.Where(x => !string.IsNullOrWhiteSpace(x.Tag)))
             {
-                update.IsLatestInTag = seenTags.Add(update.Tag);
+                update.IsLatestInTag = seenTags.Add((update.Category, update.Tag));
             }
         }
 
