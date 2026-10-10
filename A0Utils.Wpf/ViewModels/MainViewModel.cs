@@ -51,7 +51,22 @@ namespace A0Utils.Wpf.ViewModels
         public static string AssemblyCopyright { get { return _assemblyInfo[1]; } }
         public static string AssemblyCompany { get { return _assemblyInfo[2]; } }
 
-        public string SelectedLicense { get; set; }
+        private string _selectedLicense;
+        public string SelectedLicense
+        {
+            get => _selectedLicense;
+            set
+            {
+                if (SetProperty(ref _selectedLicense, value))
+                {
+                    ClearLoadedLicense();
+                }
+            }
+        }
+
+        // Лицензия, для которой сейчас показаны списки обновлений и ресурсов
+        private string _loadedLicense;
+        private LicenseInfoModel _loadedLicenseInfo;
 
         private string _downloadPath;
         public string DownloadPath
@@ -95,11 +110,97 @@ namespace A0Utils.Wpf.ViewModels
             set => SetProperty(ref _licenses, value);
         }
 
+        private bool _isA0Expired;
+        public bool IsA0Expired
+        {
+            get => _isA0Expired;
+            set => SetProperty(ref _isA0Expired, value);
+        }
+
+        private bool _isPIRExpired;
+        public bool IsPIRExpired
+        {
+            get => _isPIRExpired;
+            set => SetProperty(ref _isPIRExpired, value);
+        }
+
+        private bool _isSubscriptionExpired;
+        public bool IsSubscriptionExpired
+        {
+            get => _isSubscriptionExpired;
+            set => SetProperty(ref _isSubscriptionExpired, value);
+        }
+
         private ObservableCollection<UpdateModel> _updateModels;
         public ObservableCollection<UpdateModel> UpdateModels
         {
             get => _updateModels;
-            set => SetProperty(ref _updateModels, value);
+            set
+            {
+                if (_updateModels != null)
+                {
+                    foreach (var item in _updateModels)
+                    {
+                        item.PropertyChanged -= OnUpdateModelPropertyChanged;
+                    }
+                }
+
+                SetProperty(ref _updateModels, value);
+
+                if (_updateModels != null)
+                {
+                    foreach (var item in _updateModels)
+                    {
+                        item.PropertyChanged += OnUpdateModelPropertyChanged;
+                    }
+                }
+
+                OnPropertyChanged(nameof(AreAllSelected));
+            }
+        }
+
+        // Галочка в заголовке таблицы: отмечает или снимает все обновления.
+        // true — отмечены все, false — ни одного, null — часть.
+        public bool? AreAllSelected
+        {
+            get
+            {
+                if (UpdateModels == null || UpdateModels.Count == 0)
+                {
+                    return false;
+                }
+
+                var selectedCount = UpdateModels.Count(x => x.IsSelected);
+                if (selectedCount == 0)
+                {
+                    return false;
+                }
+
+                return selectedCount == UpdateModels.Count ? true : (bool?)null;
+            }
+            set
+            {
+                if (UpdateModels == null)
+                {
+                    return;
+                }
+
+                var isSelected = value == true;
+                foreach (var item in UpdateModels)
+                {
+                    item.IsSelected = isSelected;
+                }
+
+                OnPropertyChanged(nameof(AreAllSelected));
+            }
+        }
+
+        private void OnUpdateModelPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(UpdateModel.IsSelected))
+            {
+                OnPropertyChanged(nameof(AreAllSelected));
+            }
         }
 
         private ObservableCollection<UpdateModel> _updateModelsWithoutLicense;
@@ -157,46 +258,47 @@ namespace A0Utils.Wpf.ViewModels
 
         private async Task GetLicenseInfo()
         {
+            var licenseName = SelectedLicense;
+            ClearLoadedLicense();
+
             try
             {
-                UpdateModels?.Clear();
-                UpdateModelsWithoutLicense?.Clear();
-
-                if (string.IsNullOrEmpty(SelectedLicense))
+                if (string.IsNullOrEmpty(licenseName))
                 {
                     MessageDialogHelper.ShowError("Выберите лицензию из списка");
                     return;
                 }
 
-                var downloadLicenseResult = await DownloadAndCopyLicense(SelectedLicense);
+                var downloadLicenseResult = await DownloadAndCopyLicense(licenseName);
+                if (SelectedLicense != licenseName)
+                {
+                    return;
+                }
+
                 if (downloadLicenseResult.IsFailure)
                 {
                     MessageDialogHelper.ShowError(downloadLicenseResult.Error);
                     return;
                 }
 
-                var licenseResult = await _yandexService.GetLicensesInfo(SelectedLicense);
+                var licenseResult = await _yandexService.GetLicensesInfo(licenseName);
+                if (SelectedLicense != licenseName)
+                {
+                    return;
+                }
+
                 if (licenseResult.IsFailure)
                 {
                     MessageDialogHelper.ShowError(licenseResult.Error);
                     return;
                 }
 
-                A0LicenseExp = licenseResult.Value.A0LicenseExpAt == default
-                    ? "Лицензия А0 отсутствует"
-                    : $"Лицензия А0 до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
-
-                PIRLicenseExp = licenseResult.Value.PIRLicenseExpAt == default
-                    ? "Лицензия ПИР отсутствует"
-                    : $"Лицензия ПИР до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
-
-                SubscriptionLicenseExp = licenseResult.Value.SubscriptionLicenseExpAt == default
-                    ? "Подписка на базы отсутствует"
-                    : licenseResult.Value.SubscriptionLicenseExpAt > DateTime.Now
-                        ? $"Подписка на базы до: {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}"
-                        : $"Подписка на базы закончилась {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}";
-
                 var updatesResult = await _yandexService.GetUpdates();
+                if (SelectedLicense != licenseName)
+                {
+                    return;
+                }
+
                 if (updatesResult.IsFailure)
                 {
                     MessageDialogHelper.ShowError(updatesResult.Error);
@@ -210,16 +312,61 @@ namespace A0Utils.Wpf.ViewModels
                     return;
                 }
 
-                UpdateModels = new ObservableCollection<UpdateModel>(updateCollectionResult.Value.FilteredLicenses);
-                UpdateModelsWithoutLicense = new ObservableCollection<UpdateModel>(updateCollectionResult.Value.AllLicenses);
+                // Prepare both lists before publishing the successfully loaded license.
+                var updates = new ObservableCollection<UpdateModel>(updateCollectionResult.Value.FilteredLicenses);
+                var extraResources = new ObservableCollection<UpdateModel>(updateCollectionResult.Value.AllLicenses);
+                var today = DateTime.Today;
+                IsA0Expired = licenseResult.Value.A0LicenseExpAt != default && licenseResult.Value.A0LicenseExpAt < today;
+                IsPIRExpired = licenseResult.Value.PIRLicenseExpAt != default && licenseResult.Value.PIRLicenseExpAt < today;
+                IsSubscriptionExpired = licenseResult.Value.SubscriptionLicenseExpAt != default && licenseResult.Value.SubscriptionLicenseExpAt < today;
+
+                A0LicenseExp = licenseResult.Value.A0LicenseExpAt == default
+                    ? "Лицензия А0 отсутствует"
+                    : IsA0Expired
+                        ? $"Лицензия А0 закончилась {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}"
+                        : $"Лицензия А0 до: {licenseResult.Value.A0LicenseExpAt:dd.MM.yyyy}";
+
+                PIRLicenseExp = licenseResult.Value.PIRLicenseExpAt == default
+                    ? "Лицензия ПИР отсутствует"
+                    : IsPIRExpired
+                        ? $"Лицензия ПИР закончилась {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}"
+                        : $"Лицензия ПИР до: {licenseResult.Value.PIRLicenseExpAt:dd.MM.yyyy}";
+
+                SubscriptionLicenseExp = licenseResult.Value.SubscriptionLicenseExpAt == default
+                    ? "Подписка на базы отсутствует"
+                    : !IsSubscriptionExpired
+                        ? $"Подписка на базы до: {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}"
+                        : $"Подписка на базы закончилась {licenseResult.Value.SubscriptionLicenseExpAt:dd.MM.yyyy}";
+
+                UpdateModels = updates;
+                UpdateModelsWithoutLicense = extraResources;
+                _loadedLicense = licenseName;
+                _loadedLicenseInfo = licenseResult.Value;
+                _openRequestInvoiceCommand?.NotifyCanExecuteChanged();
 
                 MessageDialogHelper.ShowInfo("Информация о лицензии получена!");
             }
             catch (Exception ex)
             {
+                ClearLoadedLicense();
                 Log.Error(ex, "Ошибка");
                 MessageDialogHelper.ShowError($"Ошибка: {ex.Message}");
             }
+        }
+
+        private void ClearLoadedLicense()
+        {
+            _loadedLicense = null;
+            _loadedLicenseInfo = null;
+            _openRequestInvoiceCommand?.NotifyCanExecuteChanged();
+            UpdateModels = new ObservableCollection<UpdateModel>();
+            UpdateModelsWithoutLicense = new ObservableCollection<UpdateModel>();
+            A0LicenseExp = null;
+            PIRLicenseExp = null;
+            SubscriptionLicenseExp = null;
+            IsA0Expired = false;
+            IsPIRExpired = false;
+            IsSubscriptionExpired = false;
         }
 
         private ICommand _downloadSelectedCommand;
@@ -284,6 +431,65 @@ namespace A0Utils.Wpf.ViewModels
             }
 
             MessageDialogHelper.ShowInfo("Путь сохранения обновлений изменен!");
+        }
+
+        private RelayCommand _openRequestInvoiceCommand;
+        public ICommand OpenRequestInvoiceCommand
+        {
+            get
+            {
+                return _openRequestInvoiceCommand ??= new RelayCommand(RequestInvoice, CanRequestInvoice);
+            }
+        }
+
+        private bool CanRequestInvoice() =>
+            !string.IsNullOrEmpty(_loadedLicense) && _loadedLicense == SelectedLicense
+            && _loadedLicenseInfo != null && UpdateModelsWithoutLicense != null;
+
+        // Передаёт в диалог снимок выбранных ресурсов и успешно загруженной лицензии.
+        private void RequestInvoice()
+        {
+            if (!CanRequestInvoice())
+            {
+                MessageDialogHelper.ShowError("Сначала выберите лицензию и нажмите «Получить обновления»");
+                return;
+            }
+
+            var resources = UpdateModelsWithoutLicense.Where(x => x.IsSelected).Select(DescribeResource).ToList();
+            var request = new InvoiceRequestViewModel(_loadedLicense, _loadedLicenseInfo,
+                resources, SupportEmail, AssemblyVersion, DateTime.Today);
+            if (resources.Count == 0 && !request.HasRenewals)
+            {
+                MessageDialogHelper.ShowError("Отметьте ресурсы, на которые нужно выставить счёт");
+                return;
+            }
+
+            _dialogService.ShowInvoiceRequestDialog(request);
+        }
+
+        private const string SupportEmail = "nik@rccs.sampo.ru";
+
+        private static string DescribeResource(UpdateModel model)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (model.Category == "Справочники цен")
+            {
+                parts.Add($"Справочник цен {model.Index}, {model.Name}");
+                if (!string.IsNullOrWhiteSpace(model.Date))
+                {
+                    parts.Add($"от {model.Date}");
+                }
+            }
+            else
+            {
+                parts.Add($"{model.Category}: {model.Name}");
+                if (!string.IsNullOrWhiteSpace(model.Index))
+                {
+                    parts.Add($"({model.Index})");
+                }
+            }
+
+            return string.Join(" ", parts);
         }
 
         private void OpenDownloadFolder()

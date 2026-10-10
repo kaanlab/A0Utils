@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace A0Utils.Wpf.Models
 {
@@ -15,6 +16,49 @@ namespace A0Utils.Wpf.Models
         public IEnumerable<string> Urls { get; set; }
         public string Index { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
+        public string Region { get; set; } = string.Empty;
+        public string Tag { get; set; } = string.Empty;
+
+        // Самая свежая версия базы со своим тегом (например последняя ФСНБ-2022).
+        // Показывается обычной строкой, остальные версии — в свёрнутой группе под ней.
+        public bool IsLatestInTag { get; set; }
+
+        // Элемент относится к самому свежему году (в своём регионе для справочников цен,
+        // среди всех индексов для индексов). Такая группа года показывается раскрытой.
+        public bool IsNewestYear { get; set; }
+
+        // Справочник цен из единственного региона в списке: такой регион показывается раскрытым,
+        // чтобы его не пропустили
+        public bool IsOnlyRegion { get; set; }
+
+        // Год справочника или индексов; у остальных ресурсов группировки по году нет.
+        public int? Year
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Tag))
+                {
+                    return null;
+                }
+
+                var year = Category == "Справочники цен" ? FindYear(Date) ?? FindYear(Name)
+                    : Category == "Индексы к ФЕР/ТЕР" ? FindYear(Name)
+                    : null;
+
+                return int.TryParse(year, out var value) ? value : (int?)null;
+            }
+        }
+
+        private static string FindYear(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return null;
+            }
+
+            var match = Regex.Match(text, @"(?<!\d)(20\d{2})(?!\d)");
+            return match.Success ? match.Groups[1].Value : null;
+        }
 
         private bool _isSelected;
         public bool IsSelected
@@ -46,9 +90,13 @@ namespace A0Utils.Wpf.Models
         public IEnumerable<string> Urls { get; private set; }
         public string Index { get; private set; }
         public string Date { get; private set; }
+        public string Region { get; private set; }
+        public string Tag { get; private set; }
 
-        public YandexUpdateModel(string name, string key_type, string category, IEnumerable<string> urls, string index, string date)
+        public YandexUpdateModel(string name, string key_type, string category, IEnumerable<string> urls, string index, string date, string region, string tag)
         {
+            Region = region;
+            Tag = tag;
             Name = name;
             Key_type = key_type;
             Category = category;
@@ -69,7 +117,9 @@ namespace A0Utils.Wpf.Models
                 Category = y.Category,
                 Urls = y.Urls,
                 Index = y.Index,
-                Date = y.Date
+                Date = y.Date,
+                Region = y.Region,
+                Tag = y.Tag
             });
         }
 
@@ -89,7 +139,7 @@ namespace A0Utils.Wpf.Models
                 foreach (var priceUpdate in allPrices)
                 {
                     var r = pResult.FirstOrDefault(x => x.Name == priceUpdate.Index);
-                    if (r is not null && DateTime.TryParse(priceUpdate.Date, out DateTime date))
+                    if (r is not null && ParseHelpers.TryParseDate(priceUpdate.Date, out DateTime date))
                     {
                         foreach (var d in r.Dates)
                         {
@@ -129,14 +179,58 @@ namespace A0Utils.Wpf.Models
             filteredCollection.AddRange(prices);
             filteredCollection.AddRange(tables);
             filteredCollection.AddRange(indexes);
+            MarkLatestInTag(allLicenses);
+            MarkLatestInTag(filteredCollection);
+            MarkNewestYear(allLicenses);
+            MarkNewestYear(filteredCollection);
             return (allLicenses, filteredCollection);
+        }
+
+        // Отмечает элементы самого свежего года внутри каждой группы (регион справочников, индексы)
+        private static void MarkNewestYear(IEnumerable<UpdateModel> updates)
+        {
+            var groups = updates
+                .Where(x => x.Year.HasValue)
+                .GroupBy(x => new
+                {
+                    x.Category,
+                    Region = x.Category == "Справочники цен"
+                        ? (string.IsNullOrWhiteSpace(x.Region) ? "Прочие" : x.Region)
+                        : string.Empty
+                });
+
+            foreach (var group in groups)
+            {
+                var newestYear = group.Max(x => x.Year.Value);
+                foreach (var update in group)
+                {
+                    update.IsNewestYear = update.Year == newestYear;
+                }
+            }
+
+            var prices = updates.Where(x => x.Category == "Справочники цен" && string.IsNullOrWhiteSpace(x.Tag)).ToList();
+            var isOnlyRegion = prices.Select(x => string.IsNullOrWhiteSpace(x.Region) ? "Прочие" : x.Region).Distinct().Count() == 1;
+            foreach (var price in prices)
+            {
+                price.IsOnlyRegion = isOnlyRegion;
+            }
+        }
+
+        // Обновления идут от новых к старым: первая версия с тегом внутри категории — последняя.
+        private static void MarkLatestInTag(IEnumerable<UpdateModel> updates)
+        {
+            var seenTags = new HashSet<(string Category, string Tag)>();
+            foreach (var update in updates.Where(x => !string.IsNullOrWhiteSpace(x.Tag)))
+            {
+                update.IsLatestInTag = seenTags.Add((update.Category, update.Tag));
+            }
         }
 
         private static List<UpdateModel> UpdateText(this List<UpdateModel> updates, DateTime licenseExpDate)
         {
             foreach (var update in updates)
             {
-                if (DateTime.TryParse(update.Date, out DateTime updateDate))
+                if (ParseHelpers.TryParseDate(update.Date, out DateTime updateDate))
                 {
                     if (updateDate > licenseExpDate)
                     {

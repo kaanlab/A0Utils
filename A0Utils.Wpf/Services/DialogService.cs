@@ -20,11 +20,21 @@ namespace A0Utils.Wpf.Services
             SettingsView dialog = new SettingsView
             {
                 Title = "Утилиты для А0 :: Настройки",
-                DataContext = _settingsViewModel                
+                DataContext = _settingsViewModel,
+                Owner = System.Windows.Application.Current?.MainWindow
             };
 
-            _settingsViewModel.RequestClose += () => dialog.Close();
-            dialog.ShowDialog();
+            void OnRequestClose() => dialog.Close();
+
+            _settingsViewModel.RequestClose += OnRequestClose;
+            try
+            {
+                dialog.ShowDialog();
+            }
+            finally
+            {
+                _settingsViewModel.RequestClose -= OnRequestClose;
+            }
         }
 
         public void ShowLicenseDialog()
@@ -32,10 +42,32 @@ namespace A0Utils.Wpf.Services
             LicenseView dialog = new LicenseView
             {
                 Title = "Утилиты для А0 :: Лицензии",
-                DataContext = _licenseViewModel
+                DataContext = _licenseViewModel,
+                Owner = System.Windows.Application.Current?.MainWindow
             };
 
-            _licenseViewModel.RequestClose += () => dialog.Close();
+            void OnRequestClose() => dialog.Close();
+
+            _licenseViewModel.RequestClose += OnRequestClose;
+            try
+            {
+                dialog.ShowDialog();
+            }
+            finally
+            {
+                _licenseViewModel.RequestClose -= OnRequestClose;
+            }
+        }
+
+        public void ShowInvoiceRequestDialog(InvoiceRequestViewModel viewModel)
+        {
+            InvoiceRequestView dialog = new InvoiceRequestView
+            {
+                Title = "Утилиты для А0 :: Запрос счёта",
+                DataContext = viewModel,
+                Owner = System.Windows.Application.Current?.MainWindow
+            };
+
             dialog.ShowDialog();
         }
     }

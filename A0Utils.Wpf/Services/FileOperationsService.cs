@@ -46,19 +46,11 @@ namespace A0Utils.Wpf.Services
 
                     if (File.Exists(destinationFile))
                     {
-                        try
+                        var attributes = File.GetAttributes(destinationFile);
+                        if (attributes.HasFlag(FileAttributes.ReadOnly))
                         {
-                            var attributes = File.GetAttributes(destinationFile);
-                            if (attributes.HasFlag(FileAttributes.ReadOnly))
-                            {
-                                attributes &= ~FileAttributes.ReadOnly; // Убираем атрибут ReadOnly
-                                File.SetAttributes(destinationFile, attributes);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Не удалось изменить атрибуты файла");
-                            errors.Add("Не удалось изменить атрибуты файла. Попробуйте запустить программу с правами администратора");
+                            attributes &= ~FileAttributes.ReadOnly;
+                            File.SetAttributes(destinationFile, attributes);
                         }
                     }
 
@@ -67,12 +59,15 @@ namespace A0Utils.Wpf.Services
                 catch (UnauthorizedAccessException ex)
                 {
                     Log.Error(ex, "Отсутствует разрешение на запись файла");
-                    errors.Add("Отсутствует разрешение на запись файла. Попробуйте запустить программу с правами администратора");
+                    errors.Add("Недостаточно прав для копирования лицензии.\n" +
+                        "Закройте «Утилиты для А0», нажмите правой кнопкой мыши на ярлык программы " +
+                        "и выберите «Запуск от имени администратора». Затем повторите операцию.");
                 }
                 catch (IOException ex)
                 {
-                    Log.Error(ex, "Фаил лицензии занят");
-                    errors.Add("Фаил лицензии занят. Попробуйте запустить программу с правами администратора");
+                    Log.Error(ex, "Ошибка доступа к файлу лицензии");
+                    errors.Add("Не удалось скопировать лицензию. Проверьте наличие файла и папки назначения, " +
+                        "свободное место и не занят ли файл другой программой.");
                 }
                 catch (Exception ex)
                 {
@@ -96,7 +91,7 @@ namespace A0Utils.Wpf.Services
             {
                 if (string.Equals(Path.GetExtension(file), ".isl", StringComparison.OrdinalIgnoreCase))
                 {
-                    yield return file; 
+                    yield return file;
                 }
             }
         }
